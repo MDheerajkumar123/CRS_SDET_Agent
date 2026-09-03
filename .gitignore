@@ -1,0 +1,37 @@
+﻿# Virtual environment
+.venv/
+venv/
+env/
+
+# Environment variables / secrets
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# IDE
+.vscode/
+
+# Test/cache
+.pytest_cache/
+.mypy_cache/
+
+# Application data
+data/input/*
+data/processed/*
+data/output/*
+
+# Vector database
+chroma_db/
+chroma/
+*.db
+
+# Logs
+logs/
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
