@@ -1,3 +1,7 @@
+﻿from openai import RateLimitError
+from groq import RateLimitError as GroqRateLimitError
+from google.genai import errors
+
 from .config import PROVIDER_CONFIG, MAX_RETRIES
 from .router import (
     get_provider_for_task,
@@ -11,6 +15,12 @@ from .providers import (
 from .models import LLMResponse
 
 
+RATE_LIMIT_ERRORS = (
+    RateLimitError,
+    GroqRateLimitError,
+)
+
+
 class LLMManager:
 
     def __init__(self):
@@ -20,6 +30,21 @@ class LLMManager:
             "openrouter": OpenRouterProvider(),
         }
 
+    @staticmethod
+    def _is_rate_limit_error(error: Exception) -> bool:
+        """
+        Return True when the provider error represents
+        a rate-limit or quota failure.
+        """
+
+        if isinstance(error, RATE_LIMIT_ERRORS):
+            return True
+
+        if isinstance(error, errors.ClientError):
+            return getattr(error, "code", None) == 429
+
+        return False
+
     def _generate_with_provider(
         self,
         provider_name: str,
@@ -27,6 +52,9 @@ class LLMManager:
     ) -> str:
         """
         Generate a response using one provider with retries.
+
+        Rate-limit/quota errors are not retried because the
+        condition is unlikely to recover during this call.
         """
 
         provider = self.providers[provider_name]
@@ -58,6 +86,14 @@ class LLMManager:
                     f"{attempt}/{MAX_RETRIES} failed: {error}"
                 )
 
+                if self._is_rate_limit_error(error):
+                    print(
+                        f"[LLMManager] "
+                        f"{provider_name} rate limit/quota detected. "
+                        f"Skipping remaining retries."
+                    )
+                    break
+
         raise RuntimeError(
             f"{provider_name} failed after "
             f"{MAX_RETRIES} attempts."
@@ -70,50 +106,48 @@ class LLMManager:
     ) -> LLMResponse:
         """
         Generate an LLM response using the task's
-        primary provider and controlled fallback.
+        primary provider and ordered fallback providers.
         """
 
         primary_provider = get_provider_for_task(task_name)
 
-        try:
-            content = self._generate_with_provider(
-                primary_provider,
-                prompt,
-            )
+        providers_to_try = [
+            primary_provider,
+            *get_fallback_provider(primary_provider),
+        ]
 
-            return LLMResponse(
-                content=content,
-                provider=primary_provider,
-                model=PROVIDER_CONFIG[primary_provider]["model"],
-                task=task_name,
-                fallback_used=False,
-            )
+        last_error = None
 
-        except Exception:
+        for index, provider_name in enumerate(providers_to_try):
 
-            print(
-                f"[LLMManager] Primary provider "
-                f"'{primary_provider}' failed."
-            )
+            try:
+                content = self._generate_with_provider(
+                    provider_name,
+                    prompt,
+                )
 
-            fallback_provider = get_fallback_provider(
-                primary_provider
-            )
+                return LLMResponse(
+                    content=content,
+                    provider=provider_name,
+                    model=PROVIDER_CONFIG[provider_name]["model"],
+                    task=task_name,
+                    fallback_used=(index > 0),
+                )
 
-            print(
-                f"[LLMManager] Switching to fallback "
-                f"provider '{fallback_provider}'."
-            )
+            except Exception as error:
+                last_error = error
 
-            content = self._generate_with_provider(
-                fallback_provider,
-                prompt,
-            )
+                if index < len(providers_to_try) - 1:
+                    print(
+                        f"[LLMManager] Provider "
+                        f"'{provider_name}' failed."
+                    )
+                    print(
+                        f"[LLMManager] Switching to fallback "
+                        f"provider '{providers_to_try[index + 1]}'."
+                    )
 
-            return LLMResponse(
-                content=content,
-                provider=fallback_provider,
-                model=PROVIDER_CONFIG[fallback_provider]["model"],
-                task=task_name,
-                fallback_used=True,
-            )
+        raise RuntimeError(
+            f"All configured providers failed for task "
+            f"'{task_name}'."
+        ) from last_error

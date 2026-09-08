@@ -1,4 +1,4 @@
-TASK_PROVIDER_MAP = {
+﻿TASK_PROVIDER_MAP = {
     "crs_analyzer": "gemini",
     "requirement_reviewer": "openrouter",
     "risk_strategy": "openrouter",
@@ -14,9 +14,9 @@ TASK_PROVIDER_MAP = {
 
 
 FALLBACK_PROVIDER_MAP = {
-    "gemini": "openrouter",
-    "groq": "openrouter",
-    "openrouter": "gemini",
+    "gemini": ["openrouter", "groq"],
+    "openrouter": ["gemini", "groq"],
+    "groq": ["openrouter", "gemini"],
 }
 
 
@@ -33,9 +33,9 @@ def get_provider_for_task(task_name: str) -> str:
     return TASK_PROVIDER_MAP[task_name]
 
 
-def get_fallback_provider(provider_name: str) -> str:
+def get_fallback_provider(provider_name: str) -> list[str]:
     """
-    Return the configured fallback provider.
+    Return the ordered fallback providers.
     """
 
     if provider_name not in FALLBACK_PROVIDER_MAP:
