@@ -1,0 +1,395 @@
+{
+  "document_name": "SmartBank_BRD_ERD_AI_Practice_New.docx",
+  "test_case_summary": "Revised manual test cases covering payment processing, duplicate prevention, gateway confirmation, refund handling, network resilience, and data integrity for the SmartBank Payments Module. All test case classifications and test types have been updated per validation feedback to accurately reflect scenario objectives while maintaining full Requirement to Scenario to Test Design traceability.",
+  "test_cases": [
+    {
+      "test_case_id": "TC-001",
+      "design_id": "TD-001",
+      "scenario_id": "SCN-001",
+      "requirement_id": "FR-PAY-010",
+      "title": "Prevent Duplicate Charging for Completed Ride",
+      "objective": "Verify that attempting to charge the same completed ride twice does not result in duplicate charges.",
+      "test_type": "Negative",
+      "priority": "Critical",
+      "preconditions": [
+        "Payment method configured",
+        "Completed ride exists in system",
+        "First payment was successfully processed"
+      ],
+      "test_data": [
+        "Ride ID: RIDE-001",
+        "Transaction ID: TXN-001",
+        "Payment method: UPI",
+        "Fare amount: 150.00"
+      ],
+      "steps": [
+        "Navigate to the payment screen for ride RIDE-001.",
+        "Confirm that the first payment (TXN-001) was successfully processed and marked as Successful.",
+        "Attempt to initiate a second payment for the same ride RIDE-001.",
+        "Observe the system response to the second payment attempt."
+      ],
+      "expected_results": [
+        "The system should block the second payment attempt or indicate that the ride has already been paid.",
+        "No additional charge should be recorded for ride RIDE-001.",
+        "The transaction history should show only one successful charge for ride RIDE-001."
+      ],
+      "source_design": "TD-001"
+    },
+    {
+      "test_case_id": "TC-002",
+      "design_id": "TD-002",
+      "scenario_id": "SCN-002",
+      "requirement_id": "FR-PAY-002",
+      "title": "Validate UPI Payment Success Path",
+      "objective": "Ensure valid UPI payments are processed successfully and properly transition to Successful status.",
+      "test_type": "Functional",
+      "priority": "Critical",
+      "preconditions": [
+        "UPI gateway sandbox/API available",
+        "Valid UPI credentials configured",
+        "Test account with sufficient funds"
+      ],
+      "test_data": [
+        "UPI ID: test@upi",
+        "Ride ID: RIDE-002",
+        "Fare amount: 200.00"
+      ],
+      "steps": [
+        "Log in as a rider and navigate to the payment screen.",
+        "Select UPI as the payment method.",
+        "Enter valid UPI credentials and confirm the payment for ride RIDE-002.",
+        "Wait for the gateway to process the payment."
+      ],
+      "expected_results": [
+        "The UPI payment should be processed successfully.",
+        "The payment status should transition to Successful after gateway confirmation.",
+        "A receipt/confirmation should be displayed to the rider."
+      ],
+      "source_design": "TD-002"
+    },
+    {
+      "test_case_id": "TC-003",
+      "design_id": "TD-003",
+      "scenario_id": "SCN-003",
+      "requirement_id": "FR-PAY-006",
+      "title": "Gateway Confirmation Required Before Payment Success",
+      "objective": "Verify payment cannot be marked as successful until gateway authorization is received.",
+      "test_type": "Negative",
+      "priority": "Critical",
+      "preconditions": [
+        "Payment initiated",
+        "Gateway communication channel active",
+        "Ride fare calculated and authorized"
+      ],
+      "test_data": [
+        "Ride ID: RIDE-003",
+        "Transaction ID: TXN-003",
+        "Payment method: Credit Card",
+        "Fare amount: 180.00"
+      ],
+      "steps": [
+        "Initiate a payment for ride RIDE-003 using a credit card.",
+        "Simulate a scenario where the gateway has not yet confirmed the transaction.",
+        "Observe the payment status before gateway confirmation.",
+        "Simulate gateway confirmation of success."
+      ],
+      "expected_results": [
+        "Before gateway confirmation, the payment status should remain Pending.",
+        "After gateway confirmation, the payment status should transition to Successful.",
+        "The system should not mark the payment as Successful without gateway confirmation."
+      ],
+      "source_design": "TD-003"
+    },
+    {
+      "test_case_id": "TC-004",
+      "design_id": "TD-004",
+      "scenario_id": "SCN-004",
+      "requirement_id": "FR-PAY-013",
+      "title": "Eligible Refund Initiation Process",
+      "objective": "Test the end-to-end refund initiation workflow including eligibility checking and status progression.",
+      "test_type": "Functional",
+      "priority": "High",
+      "preconditions": [
+        "Refund policy defined",
+        "Eligible transaction exists in system",
+        "Payment has been successfully completed"
+      ],
+      "test_data": [
+        "Ride ID: RIDE-004",
+        "Transaction ID: TXN-004",
+        "Refund reason: Service not provided",
+        "Refund amount: 150.00"
+      ],
+      "steps": [
+        "Navigate to the transaction history for ride RIDE-004.",
+        "Select the option to initiate a refund.",
+        "Enter the refund reason and submit the request.",
+        "Observe the refund status progression."
+      ],
+      "expected_results": [
+        "The system should validate refund eligibility per business policy.",
+        "The refund status should transition to Refund Initiated.",
+        "A refund reference should be generated and displayed."
+      ],
+      "source_design": "TD-004"
+    },
+    {
+      "test_case_id": "TC-005",
+      "design_id": "TD-005",
+      "scenario_id": "SCN-005",
+      "requirement_id": "FR-PAY-011",
+      "title": "Handle Network Interruption Gracefully",
+      "objective": "Verify payment system maintains consistency and reconciliation during network failures.",
+      "test_type": "Reliability",
+      "priority": "High",
+      "preconditions": [
+        "Payment in progress",
+        "Network connection unstable",
+        "Partial gateway communication possible"
+      ],
+      "test_data": [
+        "Ride ID: RIDE-005",
+        "Transaction ID: TXN-005",
+        "Payment method: Wallet",
+        "Fare amount: 120.00"
+      ],
+      "steps": [
+        "Initiate a payment for ride RIDE-005 using wallet.",
+        "Simulate a network interruption during the payment process.",
+        "Observe the payment status during the interruption.",
+        "Restore network connectivity and allow reconciliation to occur."
+      ],
+      "expected_results": [
+        "During the interruption, the payment status should remain Pending.",
+        "Upon reconnection, the system should reconcile the pending status with the authoritative payment status.",
+        "The final payment status should accurately reflect the gateway's response."
+      ],
+      "source_design": "TD-005"
+    },
+    {
+      "test_case_id": "TC-006",
+      "design_id": "TD-006",
+      "scenario_id": "SCN-006",
+      "requirement_id": "BR-003",
+      "title": "Prevent Duplicate Charges on Rapid Retry",
+      "objective": "Ensure repeated tap/retry attempts do not result in multiple charges for the same ride.",
+      "test_type": "Negative",
+      "priority": "High",
+      "preconditions": [
+        "Payment method configured",
+        "Ride completed successfully",
+        "Payment initially processed"
+      ],
+      "test_data": [
+        "Ride ID: RIDE-006",
+        "Transaction ID: TXN-006",
+        "Payment method: UPI",
+        "Fare amount: 250.00"
+      ],
+      "steps": [
+        "Complete a payment for ride RIDE-006.",
+        "Rapidly tap the retry or submit button multiple times.",
+        "Observe the system's response to the repeated attempts.",
+        "Check the transaction history for ride RIDE-006."
+      ],
+      "expected_results": [
+        "The system should recognize the already-processed payment and not trigger additional charges.",
+        "Only one successful charge should be recorded for ride RIDE-006.",
+        "The transaction history should reflect a single transaction."
+      ],
+      "source_design": "TD-006"
+    },
+    {
+      "test_case_id": "TC-007",
+      "design_id": "TD-007",
+      "scenario_id": "SCN-007",
+      "requirement_id": "FR-PAY-004",
+      "title": "Wallet Payment with Sufficient Balance Check",
+      "objective": "Verify wallet payment handling and balance deduction when account balance covers the fare amount.",
+      "test_type": "Negative",
+      "priority": "Medium",
+      "preconditions": [
+        "Wallet balance configured",
+        "Sufficient funds available",
+        "Ride fare calculated"
+      ],
+      "test_data": [
+        "Ride ID: RIDE-007",
+        "Wallet balance: 300.00",
+        "Fare amount: 100.00"
+      ],
+      "steps": [
+        "Log in as a rider with a wallet balance of 300.00.",
+        "Navigate to the payment screen for ride RIDE-007.",
+        "Select wallet as the payment method.",
+        "Confirm the payment for the fare amount of 100.00."
+      ],
+      "expected_results": [
+        "The payment should be processed successfully using wallet funds.",
+        "The wallet balance should be debited by 100.00.",
+        "The ride status should be updated to reflect successful payment."
+      ],
+      "source_design": "TD-007"
+    },
+    {
+      "test_case_id": "TC-008",
+      "design_id": "TD-008",
+      "scenario_id": "SCN-008",
+      "requirement_id": "FR-PAY-001",
+      "title": "Display All Supported Payment Methods",
+      "objective": "Verify the payment page correctly lists all available payment options for riders.",
+      "test_type": "Functional",
+      "priority": "Medium",
+      "preconditions": [
+        "System initialized",
+        "User authenticated as rider"
+      ],
+      "test_data": [
+        "Ride ID: RIDE-008"
+      ],
+      "steps": [
+        "Log in as a rider and navigate to the payment screen for ride RIDE-008.",
+        "Observe the list of payment methods displayed.",
+        "Verify that all supported payment methods are visible."
+      ],
+      "expected_results": [
+        "The payment page should display UPI, credit/debit cards, and wallet as supported payment methods.",
+        "Each payment method should be clearly labeled and selectable.",
+        "No unsupported or hidden payment methods should be displayed."
+      ],
+      "source_design": "TD-008"
+    },
+    {
+      "test_case_id": "TC-009",
+      "design_id": "TD-009",
+      "scenario_id": "SCN-009",
+      "requirement_id": "FR-PAY-009",
+      "title": "Eligible Payment Retry After Failure",
+      "objective": "Test that failed payments can be retried without causing duplicate charges through integration interaction.",
+      "test_type": "Integration",
+      "priority": "Medium",
+      "preconditions": [
+        "Payment method configured",
+        "Previous payment failed",
+        "Ride fare still valid"
+      ],
+      "test_data": [
+        "Ride ID: RIDE-009",
+        "Transaction ID: TXN-009",
+        "Payment method: Debit Card",
+        "Fare amount: 175.00"
+      ],
+      "steps": [
+        "Attempt a payment for ride RIDE-009 that fails.",
+        "Select the retry option to attempt the payment again.",
+        "Complete the retry payment successfully.",
+        "Check the transaction history for ride RIDE-009."
+      ],
+      "expected_results": [
+        "The retry operation should succeed without causing duplicate charges.",
+        "Only one successful charge should be recorded for ride RIDE-009.",
+        "The payment status should transition to Successful after the retry."
+      ],
+      "source_design": "TD-009"
+    },
+    {
+      "test_case_id": "TC-010",
+      "design_id": "TD-010",
+      "scenario_id": "SCN-010",
+      "requirement_id": "FR-PAY-012",
+      "title": "Handle Payment Gateway Timeout",
+      "objective": "Verify payment system handles gateway timeouts without creating inconsistent states.",
+      "test_type": "Reliability",
+      "priority": "Medium",
+      "preconditions": [
+        "Payment in progress",
+        "Gateway connection unstable",
+        "Timeout condition triggered"
+      ],
+      "test_data": [
+        "Ride ID: RIDE-010",
+        "Transaction ID: TXN-010",
+        "Payment method: UPI",
+        "Fare amount: 90.00"
+      ],
+      "steps": [
+        "Initiate a payment for ride RIDE-010 using UPI.",
+        "Simulate a gateway timeout during the payment process.",
+        "Observe the payment status during the timeout.",
+        "Allow the gateway to recover and process the payment."
+      ],
+      "expected_results": [
+        "During the timeout, the payment status should remain Pending.",
+        "Upon gateway recovery, the retry mechanism should handle the timeout gracefully.",
+        "The final payment status should accurately reflect the gateway's response without corrupting the transaction state."
+      ],
+      "source_design": "TD-010"
+    },
+    {
+      "test_case_id": "TC-011",
+      "design_id": "TD-011",
+      "scenario_id": "SCN-011",
+      "requirement_id": "FR-PAY-013",
+      "title": "Refund Eligibility Validation",
+      "objective": "Verify refund eligibility is correctly assessed against business policies.",
+      "test_type": "Functional",
+      "priority": "High",
+      "preconditions": [
+        "Refund policy defined",
+        "Transaction exists in system",
+        "Payment was successfully completed"
+      ],
+      "test_data": [
+        "Ride ID: RIDE-011",
+        "Transaction ID: TXN-011",
+        "Refund reason: Duplicate charge"
+      ],
+      "steps": [
+        "Navigate to the transaction history for ride RIDE-011.",
+        "Select the option to initiate a refund.",
+        "Enter the refund reason and submit the request.",
+        "Observe the system's validation of refund eligibility."
+      ],
+      "expected_results": [
+        "The system should evaluate refund eligibility per business policy.",
+        "If eligible, the refund status should transition to Refund Initiated.",
+        "If not eligible, the system should display an appropriate message."
+      ],
+      "source_design": "TD-011"
+    },
+    {
+      "test_case_id": "TC-012",
+      "design_id": "TD-012",
+      "scenario_id": "SCN-012",
+      "requirement_id": "BR-001",
+      "title": "Payment Success Requires Gateway Confirmation",
+      "objective": "Ensure payment status reflects gateway confirmation rather than local acceptance.",
+      "test_type": "Integration",
+      "priority": "High",
+      "preconditions": [
+        "Payment initiated",
+        "Gateway communication established",
+        "Ride fare authorized"
+      ],
+      "test_data": [
+        "Ride ID: RIDE-012",
+        "Transaction ID: TXN-012",
+        "Payment method: Credit Card",
+        "Fare amount: 220.00"
+      ],
+      "steps": [
+        "Initiate a payment for ride RIDE-012 using a credit card.",
+        "Simulate local acceptance of the payment without gateway confirmation.",
+        "Observe the payment status before gateway confirmation.",
+        "Simulate gateway confirmation of success."
+      ],
+      "expected_results": [
+        "Before gateway confirmation, the payment status should not be marked as Successful.",
+        "After gateway confirmation, the payment status should transition to Successful.",
+        "The system should not mark the payment as Successful based on local acceptance alone."
+      ],
+      "source_design": "TD-012"
+    }
+  ],
+  "overall_test_case_confidence": 0.98
+}

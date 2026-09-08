@@ -1,0 +1,1149 @@
+{
+  "document_name": "SmartBank_BRD_ERD_AI_Practice_New.docx",
+  "test_case_summary": "Manual test cases covering functional, negative, boundary, integration, security, reliability, and auditability scenarios for the On-Demand Mobility Application Payments Module, aligned with BRD requirements and risk-based test strategy.",
+  "test_cases": [
+    {
+      "test_case_id": "TC-001",
+      "design_id": "DT-001",
+      "scenario_id": "SCN-001",
+      "requirement_id": "FR-PAY-001",
+      "title": "Display supported payment methods to rider",
+      "objective": "Verify that all configured payment methods are displayed to the rider on the payment selection screen",
+      "test_type": "Functional",
+      "priority": "Medium",
+      "preconditions": [
+        "Payment methods are configured in the system (DEP-002)",
+        "Rider is on the payment selection screen after ride completion"
+      ],
+      "test_data": [
+        "Configured payment methods: UPI, Credit/Debit Card, Wallet",
+        "Masked saved payment details (if any)"
+      ],
+      "steps": [
+        "Complete a ride.",
+        "Navigate to the payment selection screen.",
+        "Verify UI elements for each payment method are present.",
+        "Confirm each method shows appropriate branding and masked details if previously saved."
+      ],
+      "expected_results": [
+        "All supported payment methods are visible and selectable.",
+        "Each method displays appropriate branding and masked details if saved."
+      ],
+      "source_design": "DT-001"
+    },
+    {
+      "test_case_id": "TC-002",
+      "design_id": "DT-002",
+      "scenario_id": "SCN-002",
+      "requirement_id": "FR-PAY-002",
+      "title": "Successful UPI payment with valid credentials",
+      "objective": "Process a valid UPI payment end-to-end and verify successful status after gateway confirmation",
+      "test_type": "Functional",
+      "priority": "Critical",
+      "preconditions": [
+        "Payment gateway sandbox/API available (DEP-001)",
+        "Valid UPI credentials configured for test account (DEP-003)",
+        "Ride completed with final fare calculated (DEP-004)",
+        "Rider selects UPI as payment method"
+      ],
+      "test_data": [
+        "Valid UPI ID: testuser@upi",
+        "Fare amount: $10.00",
+        "Transaction reference: TXN-12345",
+        "Gateway response: success"
+      ],
+      "steps": [
+        "Complete ride.",
+        "On payment screen, select UPI.",
+        "Enter UPI ID testuser@upi.",
+        "Review fare (display).",
+        "Tap Pay.",
+        "Observe payment status transitions: Initiated -> Pending -> Successful.",
+        "Verify receipt displayed.",
+        "Verify notification sent.",
+        "Verify transaction appears in history."
+      ],
+      "expected_results": [
+        "Payment initiates, gateway returns success confirmation.",
+        "Status transitions from Initiated -> Pending -> Successful.",
+        "Receipt generated (FR-PAY-016).",
+        "Notification sent (FR-PAY-017).",
+        "Transaction recorded in history (FR-PAY-015).",
+        "Charged amount matches approved final fare (BR-005)."
+      ],
+      "source_design": "DT-002"
+    },
+    {
+      "test_case_id": "TC-003",
+      "design_id": "DT-003",
+      "scenario_id": "SCN-003",
+      "requirement_id": "FR-PAY-002",
+      "title": "UPI payment rejected due to invalid credentials",
+      "objective": "Attempt UPI payment with invalid UPI ID/VPA and verify appropriate failure handling",
+      "test_type": "Negative",
+      "priority": "Critical",
+      "preconditions": [
+        "Payment gateway sandbox/API available (DEP-001)",
+        "Rider enters invalid UPI credentials",
+        "Ride completed with final fare calculated"
+      ],
+      "test_data": [
+        "Invalid UPI ID: invalid@upi",
+        "Fare amount: $10.00",
+        "Expected gateway response: rejection"
+      ],
+      "steps": [
+        "Complete ride.",
+        "Select UPI payment method.",
+        "Enter invalid UPI ID invalid@upi.",
+        "Tap Pay.",
+        "Observe error message.",
+        "Verify status shows Failed.",
+        "Verify no charge applied.",
+        "Verify retry option presented."
+      ],
+      "expected_results": [
+        "Payment fails with clear error message (FR-PAY-008).",
+        "Status shows Failed (FR-PAY-007).",
+        "No charge applied.",
+        "Retry option presented (FR-PAY-009).",
+        "Error logged for audit (FR-PAY-020)."
+      ],
+      "source_design": "DT-003"
+    },
+    {
+      "test_case_id": "TC-004",
+      "design_id": "DT-004",
+      "scenario_id": "SCN-004",
+      "requirement_id": "FR-PAY-003",
+      "title": "Successful credit/debit card payment with valid card",
+      "objective": "Process a valid card payment and verify successful status after gateway confirmation",
+      "test_type": "Functional",
+      "priority": "Critical",
+      "preconditions": [
+        "Payment gateway sandbox/API available (DEP-001)",
+        "Valid test card instrument available (DEP-003)",
+        "Ride completed with final fare calculated (DEP-004)",
+        "Rider selects card payment and enters valid details"
+      ],
+      "test_data": [
+        "Card number: 4111111111111111",
+        "Expiry: 12/25",
+        "CVV: 123",
+        "Cardholder name: Test User",
+        "Fare amount: $12.50",
+        "Gateway response: success"
+      ],
+      "steps": [
+        "Complete ride.",
+        "Select Card payment.",
+        "Enter card details.",
+        "Review fare.",
+        "Tap Pay.",
+        "Observe status transitions.",
+        "Verify receipt.",
+        "Verify notification.",
+        "Verify transaction history."
+      ],
+      "expected_results": [
+        "Payment initiates, gateway returns success confirmation.",
+        "Status transitions to Successful.",
+        "Receipt generated.",
+        "Notification sent.",
+        "Transaction recorded.",
+        "Sensitive card data masked in UI and logs (BR-007, NFR-003).",
+        "Charged amount matches approved final fare (BR-005)."
+      ],
+      "source_design": "DT-004"
+    },
+    {
+      "test_case_id": "TC-005",
+      "design_id": "DT-005",
+      "scenario_id": "SCN-005",
+      "requirement_id": "FR-PAY-003",
+      "title": "Card payment rejected due to expired card",
+      "objective": "Attempt card payment with expired card and verify failure handling",
+      "test_type": "Negative",
+      "priority": "Critical",
+      "preconditions": [
+        "Payment gateway sandbox/API available (DEP-001)",
+        "Rider enters expired card details",
+        "Ride completed with final fare calculated"
+      ],
+      "test_data": [
+        "Card number: 4111111111111111",
+        "Expiry: 01/20",
+        "CVV: 123",
+        "Expected gateway response: decline"
+      ],
+      "steps": [
+        "Complete ride.",
+        "Select Card payment.",
+        "Enter card details with expired date.",
+        "Tap Pay.",
+        "Observe error message.",
+        "Verify status Failed.",
+        "Verify no charge applied.",
+        "Verify retry option."
+      ],
+      "expected_results": [
+        "Payment fails with clear error (FR-PAY-008).",
+        "Status shows Failed (FR-PAY-007).",
+        "No charge applied.",
+        "Retry option presented (FR-PAY-009).",
+        "Sensitive data not exposed in error messages."
+      ],
+      "source_design": "DT-005"
+    },
+    {
+      "test_case_id": "TC-006",
+      "design_id": "DT-006",
+      "scenario_id": "SCN-006",
+      "requirement_id": "FR-PAY-004",
+      "title": "Successful wallet payment with sufficient balance",
+      "objective": "Process wallet payment when balance covers the fare and verify processing",
+      "test_type": "Functional",
+      "priority": "High",
+      "preconditions": [
+        "Wallet balance available and sufficient for fare (DEP-002)",
+        "Ride completed with final fare calculated (DEP-004)",
+        "Rider selects wallet as payment method"
+      ],
+      "test_data": [
+        "Wallet balance: $50.00",
+        "Fare amount: $8.75",
+        "Transaction reference: WAL-999",
+        "Expected internal deduction"
+      ],
+      "steps": [
+        "Complete ride.",
+        "Select Wallet payment.",
+        "Review fare.",
+        "Tap Pay.",
+        "Observe status transitions.",
+        "Verify receipt.",
+        "Verify notification.",
+        "Verify transaction history."
+      ],
+      "expected_results": [
+        "Payment processes internally, balance deducted.",
+        "Status transitions to Successful.",
+        "Receipt generated.",
+        "Notification sent.",
+        "Transaction recorded.",
+        "Charged amount matches approved final fare (BR-005)."
+      ],
+      "source_design": "DT-006"
+    },
+    {
+      "test_case_id": "TC-007",
+      "design_id": "DT-007",
+      "scenario_id": "SCN-007",
+      "requirement_id": "FR-PAY-004",
+      "title": "Wallet payment blocked when balance insufficient",
+      "objective": "Attempt wallet payment with insufficient balance and verify appropriate handling",
+      "test_type": "Negative",
+      "priority": "High",
+      "preconditions": [
+        "Wallet balance available but less than fare amount",
+        "Ride completed with final fare calculated (DEP-004)",
+        "Rider selects wallet as payment method"
+      ],
+      "test_data": [
+        "Wallet balance: $5.00",
+        "Fare amount: $15.00",
+        "Expected error: insufficient funds"
+      ],
+      "steps": [
+        "Complete ride.",
+        "Select Wallet payment.",
+        "Review fare.",
+        "Tap Pay.",
+        "Observe error message 'Insufficient funds'.",
+        "Verify status Failed.",
+        "Verify wallet balance unchanged.",
+        "Verify prompt to add funds or choose alternative payment."
+      ],
+      "expected_results": [
+        "Payment fails with clear 'Insufficient funds' error (ERR-002, FR-PAY-008).",
+        "Status shows Failed (FR-PAY-007).",
+        "No balance deducted.",
+        "Rider prompted to add funds or choose alternative payment method."
+      ],
+      "source_design": "DT-007"
+    },
+    {
+      "test_case_id": "TC-008",
+      "design_id": "DT-008",
+      "scenario_id": "SCN-008",
+      "requirement_id": "FR-PAY-005",
+      "title": "Display final ride fare with discounts before payment confirmation",
+      "objective": "Verify final fare including applicable discounts/adjustments is displayed before rider confirms payment",
+      "test_type": "Functional",
+      "priority": "Critical",
+      "preconditions": [
+        "Ride completed, fare service available (DEP-004)",
+        "Applicable discounts/adjustments calculated",
+        "Rider on payment confirmation screen"
+      ],
+      "test_data": [
+        "Base fare: $20.00",
+        "Discount: $2.00",
+        "Adjustment: $1.00",
+        "Final fare: $19.00",
+        "Display breakdown"
+      ],
+      "steps": [
+        "Complete ride.",
+        "Navigate to payment confirmation screen.",
+        "Verify fare breakdown displayed: base fare, discount, adjustment, total.",
+        "Confirm displayed total matches amount sent to payment gateway."
+      ],
+      "expected_results": [
+        "Final fare displayed with breakdown (base fare, discounts, adjustments, total).",
+        "Displayed total matches amount sent to payment gateway (BR-005, FR-PAY-018)."
+      ],
+      "source_design": "DT-008"
+    },
+    {
+      "test_case_id": "TC-009",
+      "design_id": "DT-009",
+      "scenario_id": "SCN-009",
+      "requirement_id": "FR-PAY-006",
+      "title": "Payment marked successful only after gateway confirmation",
+      "objective": "Verify payment status transitions to Successful only upon receiving explicit gateway success confirmation",
+      "test_type": "Functional",
+      "priority": "Critical",
+      "preconditions": [
+        "Payment gateway sandbox/API available (DEP-001)",
+        "Payment initiated and in Pending state (PS-002)",
+        "Gateway returns successful authorization response"
+      ],
+      "test_data": [
+        "Transaction ID: TXN-111",
+        "Gateway response: success"
+      ],
+      "steps": [
+        "Initiate payment (e.g., UPI).",
+        "Observe status Initiated -> Pending.",
+        "Simulate gateway success response.",
+        "Verify status updates to Successful (PS-003).",
+        "Verify receipt generated.",
+        "Verify no premature success indication."
+      ],
+      "expected_results": [
+        "Status updates from Pending to Successful (PS-003) only after gateway confirmation received.",
+        "Receipt generated (FR-PAY-016).",
+        "No premature success indication."
+      ],
+      "source_design": "DT-009"
+    },
+    {
+      "test_case_id": "TC-010",
+      "design_id": "DT-010",
+      "scenario_id": "SCN-010",
+      "requirement_id": "FR-PAY-006",
+      "title": "Payment remains pending when gateway confirmation delayed",
+      "objective": "Verify payment stays in Pending state when gateway response is delayed, and reconciles correctly when response arrives",
+      "test_type": "Reliability",
+      "priority": "Critical",
+      "preconditions": [
+        "Payment initiated, gateway request sent",
+        "Gateway response delayed beyond normal timeout",
+        "Reconciliation service available (BR-008)"
+      ],
+      "test_data": [
+        "Transaction ID: TXN-222",
+        "Simulated delay > timeout"
+      ],
+      "steps": [
+        "Initiate payment.",
+        "Observe status Pending with processing indicator.",
+        "Wait beyond timeout.",
+        "Verify status remains Pending.",
+        "Simulate delayed gateway response.",
+        "Verify reconciliation occurs (BR-008) and status updates to Successful or Failed accordingly.",
+        "Verify no incorrect final status."
+      ],
+      "expected_results": [
+        "Status remains Pending (PS-002) with processing indicator.",
+        "When delayed response arrives, reconciliation occurs (BR-008) and status updates to Successful or Failed based on actual gateway outcome.",
+        "No incorrect final status (FR-PAY-011)."
+      ],
+      "source_design": "DT-010"
+    },
+    {
+      "test_case_id": "TC-011",
+      "design_id": "DT-011",
+      "scenario_id": "SCN-011",
+      "requirement_id": "FR-PAY-007",
+      "title": "Display correct payment status for each state",
+      "objective": "Verify UI accurately reflects Initiated, Pending, Successful, Failed, Refund Initiated, and Refunded statuses",
+      "test_type": "Functional",
+      "priority": "High",
+      "preconditions": [
+        "Payment status model defined (PS-001 to PS-006)",
+        "Test transactions in each status state available"
+      ],
+      "test_data": [
+        "Sample transaction IDs per status: Initiated: TXN-INIT, Pending: TXN-PEND, Successful: TXN-SUCC, Failed: TXN-FAIL, Refund Initiated: TXN-REFI, Refunded: TXN-REFUND"
+      ],
+      "steps": [
+        "For each status, navigate to transaction details screen.",
+        "Verify UI label, icon, and actionable options match status.",
+        "Ensure Failed payments never shown as Successful."
+      ],
+      "expected_results": [
+        "Each status displays appropriate label, icon, and actionable options (e.g., retry for Failed, view receipt for Successful, track refund for Refund Initiated).",
+        "Failed payments never shown as Successful (BR-004)."
+      ],
+      "source_design": "DT-011"
+    },
+    {
+      "test_case_id": "TC-012",
+      "design_id": "DT-012",
+      "scenario_id": "SCN-012",
+      "requirement_id": "FR-PAY-008",
+      "title": "Show clear error message for gateway rejection",
+      "objective": "Verify user-friendly error message displayed when payment gateway rejects transaction",
+      "test_type": "Negative",
+      "priority": "Medium",
+      "preconditions": [
+        "Payment gateway sandbox/API available (DEP-001)",
+        "Gateway returns rejection response (ERR-003)",
+        "Rider initiated payment"
+      ],
+      "test_data": [
+        "Gateway rejection code: DECLINE-001",
+        "Expected user-friendly message: 'Payment declined. Please try another method.'"
+      ],
+      "steps": [
+        "Initiate payment (e.g., card).",
+        "Simulate gateway rejection.",
+        "Verify error message displayed (non‑technical).",
+        "Verify status Failed.",
+        "Verify retry option available.",
+        "Verify no raw gateway codes exposed."
+      ],
+      "expected_results": [
+        "Clear, non‑technical error message shown (e.g., 'Payment declined. Please try another method.').",
+        "Status shows Failed (FR-PAY-007).",
+        "Retry option available (FR-PAY-009).",
+        "No sensitive gateway error codes exposed to user."
+      ],
+      "source_design": "DT-012"
+    },
+    {
+      "test_case_id": "TC-013",
+      "design_id": "DT-013",
+      "scenario_id": "SCN-013",
+      "requirement_id": "FR-PAY-009",
+      "title": "Eligible payment retry after failure without duplicate charge",
+      "objective": "Verify rider can retry failed payment and only single charge occurs",
+      "test_type": "Functional",
+      "priority": "High",
+      "preconditions": [
+        "Previous payment attempt failed (status Failed)",
+        "Retry logic implemented (DEP-001)",
+        "Unique transaction reference generated per attempt (BR-002)"
+      ],
+      "test_data": [
+        "Original transaction ID: TXN-ORIG",
+        "Retry transaction ID: TXN-RETRY",
+        "Both share same Ride ID"
+      ],
+      "steps": [
+        "Perform a payment that fails (e.g., invalid card).",
+        "Verify status Failed.",
+        "Tap \"Retry Payment\".",
+        "Enter valid payment details (e.g., correct card).",
+        "Complete payment.",
+        "Verify new transaction reference generated.",
+        "Verify original transaction remains Failed.",
+        "Verify only one charge applied (new transaction)."
+      ],
+      "expected_results": [
+        "Retry initiates new payment attempt with new transaction reference.",
+        "Original failed transaction remains Failed.",
+        "Only successful retry results in charge.",
+        "No duplicate charging (BR-003, FR-PAY-010)."
+      ],
+      "source_design": "DT-013"
+    },
+    {
+      "test_case_id": "TC-014",
+      "design_id": "DT-014",
+      "scenario_id": "SCN-014",
+      "requirement_id": "FR-PAY-010",
+      "title": "Prevent duplicate charging on rapid repeated submissions",
+      "objective": "Verify idempotency when rider taps pay button multiple times rapidly",
+      "test_type": "Negative",
+      "priority": "Critical",
+      "preconditions": [
+        "Payment initiated, gateway request in progress",
+        "Rider taps pay button multiple times within short interval",
+        "Duplicate detection mechanism active (BR-003)"
+      ],
+      "test_data": [
+        "Ride ID: RIDE-001",
+        "Simulated rapid taps: 3 taps within 1 second"
+      ],
+      "steps": [
+        "Initiate payment (select method, enter details).",
+        "Rapidly tap \"Pay\" button multiple times.",
+        "Verify only one request sent to gateway (monitor network logs).",
+        "Verify UI shows processing indicator.",
+        "Verify final status reflects single transaction."
+      ],
+      "expected_results": [
+        "Only single payment request sent to gateway.",
+        "Subsequent taps ignored or queued.",
+        "Only one charge processed.",
+        "Unique transaction reference per ride (BR-002).",
+        "Status updates correctly based on single gateway response."
+      ],
+      "source_design": "DT-014"
+    },
+    {
+      "test_case_id": "TC-015",
+      "design_id": "DT-015",
+      "scenario_id": "SCN-015",
+      "requirement_id": "FR-PAY-011",
+      "title": "Handle network interruption during payment processing",
+      "objective": "Verify payment state remains consistent when network fails mid-transaction",
+      "test_type": "Reliability",
+      "priority": "High",
+      "preconditions": [
+        "Payment initiated, request sent to gateway",
+        "Network connectivity lost before response received",
+        "Network resilience mechanisms in place"
+      ],
+      "test_data": [
+        "Transaction ID: TXN-NET",
+        "Simulated network loss after request"
+      ],
+      "steps": [
+        "Initiate payment.",
+        "Simulate network loss (disconnect Wi-Fi/Cellular).",
+        "Observe offline indicator.",
+        "Verify payment state preserved locally (status Pending).",
+        "Restore network.",
+        "Verify automatic reconciliation (BR-008) and status update to actual outcome.",
+        "Verify no inconsistent state."
+      ],
+      "expected_results": [
+        "App detects network loss, shows offline indicator.",
+        "Payment remains in Pending (PS-002) locally.",
+        "On network restore, app reconciles with gateway (BR-008) and updates status to actual outcome.",
+        "No incorrect final status (FR-PAY-011).",
+        "No data loss or inconsistent state (NFR-006)."
+      ],
+      "source_design": "DT-015"
+    },
+    {
+      "test_case_id": "TC-016",
+      "design_id": "DT-016",
+      "scenario_id": "SCN-016",
+      "requirement_id": "FR-PAY-012",
+      "title": "Handle payment gateway timeout",
+      "objective": "Verify graceful handling when payment gateway does not respond within timeout threshold",
+      "test_type": "Reliability",
+      "priority": "High",
+      "preconditions": [
+        "Payment gateway sandbox/API available (DEP-001)",
+        "Gateway request sent, no response within configured timeout",
+        "Timeout handling implemented"
+      ],
+      "test_data": [
+        "Transaction ID: TXN-TOUT",
+        "Timeout threshold: 30 seconds",
+        "Simulated no response"
+      ],
+      "steps": [
+        "Initiate payment.",
+        "Wait beyond timeout.",
+        "Observe UI message: \"Payment processing taking longer than expected. We are checking with your bank.\"",
+        "Verify status remains Pending with timeout indicator.",
+        "User selects \"Wait\" or \"Retry Later\".",
+        "Verify transaction preserved for later retry.",
+        "After timeout, background polling resumes.",
+        "Simulate eventual gateway response.",
+        "Verify status updates accordingly.",
+        "Verify no charge without confirmation."
+      ],
+      "expected_results": [
+        "User sees processing message with 'Wait' and 'Retry Later' options.",
+        "Status remains Pending (PS-002) with timeout indication.",
+        "Background reconciliation polls for status (ERR-008).",
+        "No charge without confirmation (BR-001)."
+      ],
+      "source_design": "DT-016"
+    },
+    {
+      "test_case_id": "TC-017",
+      "design_id": "DT-017",
+      "scenario_id": "SCN-017",
+      "requirement_id": "FR-PAY-013",
+      "title": "Initiate eligible refund for qualifying transaction",
+      "objective": "Verify refund can be initiated for transaction meeting business policy criteria",
+      "test_type": "Functional",
+      "priority": "High",
+      "preconditions": [
+        "Completed transaction with Successful status",
+        "Refund policy defined (DEP-005)",
+        "Transaction meets eligibility criteria per BR-006",
+        "Rider or support initiates refund request"
+      ],
+      "test_data": [
+        "Transaction ID: TXN-REF1",
+        "Fare amount: $25.00",
+        "Refund amount: $25.00",
+        "Refund policy: Full refund within 30 mins",
+        "Refund reference: REF-001"
+      ],
+      "steps": [
+        "Locate completed transaction in history.",
+        "Tap \"Request Refund\".",
+        "Confirm refund request.",
+        "Verify status changes to Refund Initiated (PS-005).",
+        "Verify refund reference displayed.",
+        "Verify notification sent.",
+        "After processing, verify status updates to Refunded (PS-006).",
+        "Verify audit log entry."
+      ],
+      "expected_results": [
+        "Refund initiated, status transitions to Refund Initiated (PS-005).",
+        "Refund reference generated.",
+        "Notification sent (FR-PAY-017).",
+        "Refund amount matches policy (BR-006).",
+        "Audit trail recorded (FR-PAY-020)."
+      ],
+      "source_design": "DT-017"
+    },
+    {
+      "test_case_id": "TC-018",
+      "design_id": "DT-018",
+      "scenario_id": "SCN-018",
+      "requirement_id": "FR-PAY-013",
+      "title": "Reject refund initiation for ineligible transaction",
+      "objective": "Verify refund cannot be initiated for transaction not meeting policy criteria",
+      "test_type": "Negative",
+      "priority": "High",
+      "preconditions": [
+        "Completed transaction with Successful status",
+        "Refund policy defined (DEP-005)",
+        "Transaction does not meet eligibility criteria (e.g., outside time window, non-refundable fare type)"
+      ],
+      "test_data": [
+        "Transaction ID: TXN-REF2",
+        "Fare amount: $30.00",
+        "Refund policy: Refund only within 15 minutes",
+        "Transaction age: 20 minutes"
+      ],
+      "steps": [
+        "Locate transaction.",
+        "Tap \"Request Refund\".",
+        "System validates eligibility.",
+        "Verify error message: \"Refund not eligible per policy (e.g., outside time window).\"",
+        "Verify status remains Successful.",
+        "Verify no refund reference generated.",
+        "Verify audit log records attempt."
+      ],
+      "expected_results": [
+        "Refund initiation blocked with clear reason (e.g., 'Refund not eligible per policy').",
+        "Status remains Successful.",
+        "No refund reference generated.",
+        "Audit log records attempt (FR-PAY-020)."
+      ],
+      "source_design": "DT-018"
+    },
+    {
+      "test_case_id": "TC-019",
+      "design_id": "DT-019",
+      "scenario_id": "SCN-019",
+      "requirement_id": "FR-PAY-014",
+      "title": "Display refund status progression to rider",
+      "objective": "Verify rider sees accurate refund status updates from initiation to completion",
+      "test_type": "Functional",
+      "priority": "Medium",
+      "preconditions": [
+        "Refund initiated for transaction (status Refund Initiated - PS-005)",
+        "Rider views transaction details or refund tracking screen"
+      ],
+      "test_data": [
+        "Refund reference: REF-002",
+        "Estimated completion time: 2 minutes",
+        "Final refund status: Refunded"
+      ],
+      "steps": [
+        "Navigate to transaction details.",
+        "Verify status displayed as 'Refund Initiated' with timeline.",
+        "Wait for processing.",
+        "Verify status updates to 'Refunded' (PS-006) with reference and amount.",
+        "Verify notification sent."
+      ],
+      "expected_results": [
+        "Refund status displayed as 'Refund Initiated' with estimated timeline.",
+        "On completion, status updates to 'Refunded' (PS-006) with refund reference and amount.",
+        "Notification sent (FR-PAY-017)."
+      ],
+      "source_design": "DT-019"
+    },
+    {
+      "test_case_id": "TC-020",
+      "design_id": "DT-020",
+      "scenario_id": "SCN-020",
+      "requirement_id": "FR-PAY-015",
+      "title": "Display complete transaction history with required details",
+      "objective": "Verify transaction history shows all required data elements for each transaction",
+      "test_type": "Functional",
+      "priority": "Medium",
+      "preconditions": [
+        "Multiple completed transactions exist (various statuses)",
+        "Transaction data retention in place (DEP-006)",
+        "Rider accesses transaction history screen"
+      ],
+      "test_data": [
+        "TXN-001: Ride ID R001, Date 2023-10-01 10:00, Method UPI, Amount $12.00, Status Successful",
+        "TXN-002: Ride ID R002, Date 2023-10-02 11:30, Method Card, Amount $15.00, Status Failed",
+        "TXN-003: Ride ID R003, Date 2023-10-03 12:45, Method Wallet, Amount $9.00, Status Refunded"
+      ],
+      "steps": [
+        "Log in as rider.",
+        "Navigate to History screen.",
+        "Verify list includes all transactions.",
+        "For each transaction, verify presence of Ride ID, Transaction ID, Date/Time, Payment Method, Fare Amount, Discounts/Adjustments, Payment Status, Gateway Reference, Refund Status (if applicable).",
+        "Verify sensitive data masked (e.g., card number shown as ****1111)."
+      ],
+      "expected_results": [
+        "History lists transactions with: Ride ID, Transaction ID, Date/Time, Payment Method, Fare Amount, Discounts/Adjustments, Payment Status, Gateway Reference, Refund Status (if applicable).",
+        "Data matches DR-001 through DR-010.",
+        "Sensitive data masked (BR-007)."
+      ],
+      "source_design": "DT-020"
+    },
+    {
+      "test_case_id": "TC-021",
+      "design_id": "DT-021",
+      "scenario_id": "SCN-021",
+      "requirement_id": "FR-PAY-016",
+      "title": "Generate payment receipt with required details after success",
+      "objective": "Verify receipt/confirmation provided with all necessary information after successful payment",
+      "test_type": "Functional",
+      "priority": "Medium",
+      "preconditions": [
+        "Payment completed with Successful status (PS-003)",
+        "Rider views receipt screen or receives digital receipt"
+      ],
+      "test_data": [
+        "Transaction ID: TXN-REC1",
+        "Ride ID: RIDE-101",
+        "Date/Time: 2023-10-04 14:20",
+        "Payment Method: UPI",
+        "Amount: $18.00",
+        "Gateway reference: GW-ABC123",
+        "Receipt number: REC-001"
+      ],
+      "steps": [
+        "After successful payment, navigate to Receipt screen (or view notification).",
+        "Verify receipt contains Transaction ID, Ride ID, Date/Time, Payment Method (masked if needed), Fare Amount, Discounts/Adjustments, Total Charged, Gateway Reference, Status: Successful.",
+        "Verify download/share options."
+      ],
+      "expected_results": [
+        "Receipt shows: Transaction ID, Ride ID, Date/Time, Payment Method (masked), Fare Amount, Discounts/Adjustments, Total Charged, Gateway Reference, Status: Successful.",
+        "Download/share option available.",
+        "Sensitive data masked (BR-007)."
+      ],
+      "source_design": "DT-021"
+    },
+    {
+      "test_case_id": "TC-022",
+      "design_id": "DT-022",
+      "scenario_id": "SCN-022",
+      "requirement_id": "FR-PAY-017",
+      "title": "Send notification for payment success, failure, and refund events",
+      "objective": "Verify notifications delivered for key payment lifecycle events",
+      "test_type": "Integration",
+      "priority": "Medium",
+      "preconditions": [
+        "Notification service available (DEP-001 dependency)",
+        "Rider has notification permissions enabled",
+        "Payment events occur (success, failure, refund initiated, refund completed)"
+      ],
+      "test_data": [
+        "Payment success: Transaction TXN-NOT1, amount $22.00",
+        "Payment failure: Transaction TXN-NOT2, amount $22.00 (failed)",
+        "Refund initiated: Transaction TXN-NOT3, amount $22.00",
+        "Refund completed: Transaction TXN-NOT4, amount $22.00"
+      ],
+      "steps": [
+        "Trigger each payment event (via test harness).",
+        "Verify push notification or in-app alert appears for each event.",
+        "Verify notification content includes relevant details (transaction ID, amount, status).",
+        "Verify notifications are delivered within acceptable time (<5 mins).",
+        "Verify no duplicate notifications."
+      ],
+      "expected_results": [
+        "Timely push/in-app notifications sent for: Payment Successful (with amount), Payment Failed (with retry prompt), Refund Initiated, Refund Completed.",
+        "Notification content accurate and non-sensitive."
+      ],
+      "source_design": "DT-022"
+    },
+    {
+      "test_case_id": "TC-023",
+      "design_id": "DT-023",
+      "scenario_id": "SCN-023",
+      "requirement_id": "FR-PAY-018",
+      "title": "Charge approved final fare including discounts and adjustments",
+      "objective": "Verify charged amount exactly matches approved final fare with all adjustments applied",
+      "test_type": "Functional",
+      "priority": "Critical",
+      "preconditions": [
+        "Fare service available (DEP-004)",
+        "Ride completed with base fare, applicable discounts, and adjustments calculated",
+        "Rider initiates payment"
+      ],
+      "test_data": [
+        "Base fare: $30.00",
+        "Discount: $5.00",
+        "Adjustment: $2.00",
+        "Final fare: $27.00",
+        "Transaction ID: TXN-FARE1"
+      ],
+      "steps": [
+        "Complete ride.",
+        "On payment screen, review fare breakdown.",
+        "Select payment method (e.g., UPI).",
+        "Initiate payment.",
+        "Verify amount sent to gateway equals $27.00.",
+        "Verify gateway charges exactly this amount.",
+        "Verify receipt and history reflect $27.00.",
+        "Verify no rounding discrepancies."
+      ],
+      "expected_results": [
+        "Amount sent to gateway equals approved final fare (base - discounts + adjustments).",
+        "Gateway charges exactly this amount.",
+        "Receipt and history reflect same amount.",
+        "No rounding discrepancies (BR-005)."
+      ],
+      "source_design": "DT-023"
+    },
+    {
+      "test_case_id": "TC-024",
+      "design_id": "DT-024",
+      "scenario_id": "SCN-024",
+      "requirement_id": "FR-PAY-019",
+      "title": "Require authentication for sensitive payment actions",
+      "objective": "Verify authentication challenge presented for sensitive payment operations",
+      "test_type": "Security",
+      "priority": "High",
+      "preconditions": [
+        "Authentication service available",
+        "Rider attempts sensitive payment action (e.g., adding new card, changing default payment, initiating refund)",
+        "Session valid but requires step-up authentication"
+      ],
+      "test_data": [
+        "Sensitive action: Add new card",
+        "Authentication method: Biometric (Face ID)",
+        "User credentials: valid"
+      ],
+      "steps": [
+        "While logged in, navigate to \"Payment Settings\" -> \"Add New Card\".",
+        "Enter card details.",
+        "System prompts for authentication (Face ID/PIN).",
+        "Provide authentication.",
+        "Verify action proceeds.",
+        "Verify sensitive card data never displayed unmasked (e.g., full card number shown as ****).",
+        "Verify failed auth attempts logged."
+      ],
+      "expected_results": [
+        "Biometric/PIN/OTP challenge presented.",
+        "Action only proceeds on successful authentication.",
+        "Sensitive payment data never displayed unmasked per BR-007, NFR-003.",
+        "Failed auth attempts logged."
+      ],
+      "source_design": "DT-024"
+    },
+    {
+      "test_case_id": "TC-025",
+      "design_id": "DT-025",
+      "scenario_id": "SCN-025",
+      "requirement_id": "FR-PAY-020",
+      "title": "Maintain transaction identifiers and audit trail for support",
+      "objective": "Verify all required identifiers and timestamps persisted for audit and support investigation",
+      "test_type": "Auditability",
+      "priority": "High",
+      "preconditions": [
+        "Payment transaction completed (any final status)",
+        "Audit logging mechanism active (DEP-006)"
+      ],
+      "test_data": [
+        "Transaction ID: TXN-AUD1",
+        "Ride ID: RIDE-AUD1",
+        "Rider ID: RIDER-001",
+        "Payment Method: Card",
+        "Fare Amount: $45.00",
+        "Timestamps: init 2023-10-05 09:00, request 09:01, response 09:02, final 09:03",
+        "Gateway reference: GW-AUD1",
+        "Refund reference: REF-AUD1 (if applicable)"
+      ],
+      "steps": [
+        "Perform a payment (e.g., successful).",
+        "Verify system logs contain all required fields: Ride ID, Transaction ID, Rider ID, Payment Method, Fare Amount, Discounts/Adjustments, Timestamps (initiation, gateway request, gateway response, final status), Gateway Reference, Payment Status, Refund Reference/Status (if applicable).",
+        "Verify sensitive data masked in logs (e.g., card number masked).",
+        "Access audit log via support console.",
+        "Verify entries are searchable and retain required data without exposing sensitive information."
+      ],
+      "expected_results": [
+        "System retains: Ride ID, Transaction ID, Rider ID, Payment Method, Fare Amount, Discounts/Adjustments, Timestamps (initiation, gateway request, gateway response, final status), Gateway Reference, Payment Status, Refund Reference/Status (if applicable).",
+        "Sensitive data masked in logs (BR-007, NFR-007).",
+        "Customer Support can investigate (UR-002)."
+      ],
+      "source_design": "DT-025"
+    },
+    {
+      "test_case_id": "TC-026",
+      "design_id": "DT-026",
+      "scenario_id": "SCN-026",
+      "requirement_id": "ERR-001",
+      "title": "Handle invalid UPI/payment credentials error",
+      "objective": "Verify specific handling for invalid credential format or unregistered UPI ID",
+      "test_type": "Negative",
+      "priority": "Critical",
+      "preconditions": [
+        "Rider enters malformed UPI ID or unregistered VPA",
+        "Credential validation service available"
+      ],
+      "test_data": [
+        "Invalid UPI ID: invalidupi",
+        "Expected validation error: \"Invalid UPI format\""
+      ],
+      "steps": [
+        "On payment screen, select UPI.",
+        "Enter invalid UPI ID invalidupi.",
+        "System validates format.",
+        "Verify client-side error message: \"Invalid UPI format. Please enter a valid VPA.\"",
+        "Verify no request sent to gateway.",
+        "Verify status remains Initiated (or no transaction).",
+        "Verify error logged."
+      ],
+      "expected_results": [
+        "Immediate client-side validation error for format issues.",
+        "For unregistered VPA, gateway rejection handled with clear message 'Invalid UPI ID. Please verify and try again.'",
+        "Status Failed.",
+        "No charge."
+      ],
+      "source_design": "DT-026"
+    },
+    {
+      "test_case_id": "TC-027",
+      "design_id": "DT-027",
+      "scenario_id": "SCN-027",
+      "requirement_id": "ERR-003",
+      "title": "Handle gateway rejection with specific decline reason",
+      "objective": "Verify appropriate user messaging for different gateway rejection codes",
+      "test_type": "Negative",
+      "priority": "Critical",
+      "preconditions": [
+        "Payment gateway returns specific rejection codes",
+        "Rider initiated payment"
+      ],
+      "test_data": [
+        "Rejection code: DECLINE-INSUFFICIENT_FUNDS",
+        "Expected user message: \"Insufficient funds. Please use another payment method.\""
+      ],
+      "steps": [
+        "Initiate payment (e.g., card).",
+        "Simulate gateway rejection with code \"DECLINE-INSUFFICIENT_FUNDS\".",
+        "Verify UI displays user-friendly message: \"Insufficient funds. Please use another payment method.\"",
+        "Verify status Failed.",
+        "Verify retry option available.",
+        "Verify raw gateway code not exposed."
+      ],
+      "expected_results": [
+        "Generic rejection mapped to user-friendly messages: 'Insufficient funds' (ERR-002), 'Card blocked - contact bank', 'Transaction limit exceeded'.",
+        "No raw gateway codes shown.",
+        "Status Failed.",
+        "Retry eligible per policy (FR-PAY-009)."
+      ],
+      "source_design": "DT-027"
+    },
+    {
+      "test_case_id": "TC-028",
+      "design_id": "DT-028",
+      "scenario_id": "SCN-028",
+      "requirement_id": "ERR-004",
+      "title": "Handle gateway timeout with retry option",
+      "objective": "Verify timeout handling provides clear user guidance and preserves transaction integrity",
+      "test_type": "Reliability",
+      "priority": "High",
+      "preconditions": [
+        "Gateway request sent, no response within timeout threshold",
+        "Payment in Pending state"
+      ],
+      "test_data": [
+        "Transaction ID: TXN-TOUT2",
+        "Timeout threshold: 30 seconds",
+        "Simulated no response"
+      ],
+      "steps": [
+        "Initiate payment.",
+        "Wait beyond timeout.",
+        "Observe UI message: \"Payment processing taking longer than expected. We are checking with your bank.\"",
+        "Verify status remains Pending with timeout indicator.",
+        "User selects \"Wait\" or \"Retry Later\".",
+        "Verify transaction preserved for later retry.",
+        "After timeout, background polling resumes.",
+        "Simulate eventual gateway response.",
+        "Verify status updates accordingly.",
+        "Verify no charge without confirmation."
+      ],
+      "expected_results": [
+        "User sees processing message with 'Wait' and 'Retry Later' options.",
+        "Status remains Pending (PS-002) with timeout indication.",
+        "Background reconciliation polls for status (ERR-008).",
+        "No charge without confirmation (BR-001)."
+      ],
+      "source_design": "DT-028"
+    },
+    {
+      "test_case_id": "TC-029",
+      "design_id": "DT-029",
+      "scenario_id": "SCN-029",
+      "requirement_id": "ERR-005",
+      "title": "Handle network interruption with offline indicator",
+      "objective": "Verify app behavior when network lost during payment flow",
+      "test_type": "Reliability",
+      "priority": "High",
+      "preconditions": [
+        "Payment in progress (Initiated or Pending)",
+        "Device loses network connectivity",
+        "Network resilience mechanisms active"
+      ],
+      "test_data": [
+        "Transaction ID: TXN-NET2",
+        "Simulated network loss after request"
+      ],
+      "steps": [
+        "Initiate payment.",
+        "Simulate network loss (turn off Wi-Fi/Cellular).",
+        "Observe offline banner.",
+        "Verify payment state preserved locally (status Pending).",
+        "Restore network.",
+        "Verify automatic reconciliation (BR-008) and status update to Successful/Failed.",
+        "Verify UI reflects correct status."
+      ],
+      "expected_results": [
+        "Offline banner shown.",
+        "Payment state preserved locally.",
+        "On reconnect, automatic reconciliation (BR-008).",
+        "User informed of outcome.",
+        "No data loss or inconsistent state (NFR-006)."
+      ],
+      "source_design": "DT-029"
+    },
+    {
+      "test_case_id": "TC-030",
+      "design_id": "DT-030",
+      "scenario_id": "SCN-030",
+      "requirement_id": "ERR-006",
+      "title": "Handle app closed during payment processing",
+      "objective": "Verify payment state recovery when app is killed/closed mid-transaction",
+      "test_type": "Reliability",
+      "priority": "High",
+      "preconditions": [
+        "Payment initiated, gateway request sent",
+        "App force-closed or crashed by user/system",
+        "State persistence mechanism active"
+      ],
+      "test_data": [
+        "Transaction ID: TXN-CRASH",
+        "Ride ID: RIDE-CRASH",
+        "Simulated app kill after request"
+      ],
+      "steps": [
+        "Initiate payment.",
+        "Simulate app backgrounded and force-closed.",
+        "On app restart, verify payment status fetched from backend.",
+        "UI reflects actual gateway status (Pending/Successful/Failed).",
+        "If Pending, reconciliation runs (BR-008).",
+        "Verify no orphaned transactions."
+      ],
+      "expected_results": [
+        "On app restart, payment status fetched from backend.",
+        "UI reflects actual gateway status.",
+        "If Pending, reconciliation runs (BR-008).",
+        "No orphaned transactions."
+      ],
+      "source_design": "DT-030"
+    },
+    {
+      "test_case_id": "TC-031",
+      "design_id": "DT-031",
+      "scenario_id": "SCN-031",
+      "requirement_id": "ERR-007",
+      "title": "Handle repeated submission without duplicate charge",
+      "objective": "Verify idempotency protection against repeated payment submissions",
+      "test_type": "Negative",
+      "priority": "Critical",
+      "preconditions": [
+        "Payment request in progress",
+        "Multiple identical payment requests submitted rapidly (simulated)",
+        "Duplicate detection mechanism active (BR-003)"
+      ],
+      "test_data": [
+        "Ride ID: RIDE-REP",
+        "Simulated taps: 3 rapid submissions"
+      ],
+      "steps": [
+        "Initiate payment (select method, enter details).",
+        "Rapidly tap \"Pay\" button multiple times.",
+        "Verify only one request sent to gateway (monitor network).",
+        "Verify UI shows processing indicator.",
+        "Verify final status reflects single transaction."
+      ],
+      "expected_results": [
+        "Only first request processed.",
+        "Subsequent requests return 'Payment already in progress' or are deduplicated at gateway.",
+        "Single charge.",
+        "Unique transaction reference per ride (BR-002)."
+      ],
+      "source_design": "DT-031"
+    },
+    {
+      "test_case_id": "TC-032",
+      "design_id": "DT-032",
+      "scenario_id": "SCN-032",
+      "requirement_id": "ERR-008",
+      "title": "Handle delayed payment status response",
+      "objective": "Verify polling/reconciliation handles delayed gateway status updates correctly",
+      "test_type": "Reliability",
+      "priority": "High",
+      "preconditions": [
+        "Payment in Pending state",
+        "Gateway status update delayed (async callback or polling)",
+        "Status polling mechanism active"
+      ],
+      "test_data": [
+        "Transaction ID: TXN-DELAY",
+        "Simulated delay of 2 minutes before gateway callback"
+      ],
+      "steps": [
+        "Initiate payment.",
+        "Observe status Pending.",
+        "Wait for delayed response.",
+        "Verify background polling continues.",
+        "When gateway response arrives, status updates to Successful/Failed.",
+        "Verify UI reflects transition smoothly.",
+        "Verify no premature status assumption."
+      ],
+      "expected_results": [
+        "Status updates to final state (Successful/Failed) when authoritative response received.",
+        "UI reflects transition smoothly.",
+        "No premature status assumption."
+      ],
+      "source_design": "DT-032"
+    }
+  ],
+  "overall_test_case_confidence": 0.95
+}
