@@ -22,6 +22,7 @@ __pycache__/
 data/input/*
 data/processed/*
 data/output/*
+output/
 
 # Vector database
 chroma_db/

@@ -41,6 +41,7 @@ class GroqProvider:
                     "content": prompt,
                 }
             ],
+            max_completion_tokens=16000,
         )
 
         return response.choices[0].message.content

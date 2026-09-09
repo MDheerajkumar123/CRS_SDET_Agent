@@ -20,7 +20,8 @@ class ScenarioReworkService:
         document_name: str,
         requirement_context: str,
         risk_strategy_context: str,
-    ) -> tuple[ScenarioAnalysis, object]:
+        retry_count: int = 0,
+        ) -> tuple[ScenarioAnalysis, object]:
 
         if not isinstance(scenarios, ScenarioAnalysis):
             raise TypeError(
@@ -44,7 +45,7 @@ class ScenarioReworkService:
             current_scenarios=current_scenarios,
             issues=review.issues,
             required_changes=review.required_changes,
-            retry_count=0,
+            retry_count=retry_count,
         )
 
         llm_response = self.llm_manager.generate(

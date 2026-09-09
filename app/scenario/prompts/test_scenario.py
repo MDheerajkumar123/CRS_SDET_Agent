@@ -35,17 +35,31 @@ def build_test_scenario_prompt(
            - Do not create new business requirements.
 
         2. SCENARIO TYPES
-           Use only:
-           - Positive
-           - Negative
-           - Boundary
-           - Error
-           - Integration
-           - Security
-           - Performance
-           - Usability
-           - Compatibility
-           - Regression
+            The scenario_type field is NOT a test type.
+
+            Use ONLY one of these exact ScenarioType values:
+            - Positive
+            - Negative
+            - Boundary
+            - Error
+            - Integration
+            - Security
+            - Performance
+            - Reliability
+            - Usability
+            - Compatibility
+            - Regression
+
+            NEVER use:
+            - Functional
+            - Auditability
+            - Risk levels
+            - TestStrategy test types
+            - RequirementType values
+
+            If a requirement is functionally testable, classify the scenario
+            according to the scenario condition being tested, such as Positive,
+            Negative, Boundary, Error, or Integration.
 
         3. POSITIVE SCENARIOS
            Cover valid business flows and expected successful behavior.
@@ -133,15 +147,25 @@ def build_test_scenario_prompt(
 
             Scenarios may cover the same requirement when they represent
             genuinely different conditions or test perspectives.
-
-        16. RISK-BASED COVERAGE
+        16. SCENARIO COUNT AND OUTPUT SIZE
+            - Generate a focused set of high-value scenarios.
+            - Target approximately 1 to 3 high-value scenarios per requirement.
+            - Critical and High-risk requirements may receive up to 3 scenarios.
+            - Medium and Low-risk requirements should normally receive 1 to 2 scenarios.
+            - Do not generate repetitive scenarios.
+            - Prefer distinct business conditions and risk perspectives.
+            - Keep each scenario concise.
+            - Do not repeat the full requirement text in description or
+            source_requirement.
+            - Ensure the complete JSON object is returned without truncation.
+        17. RISK-BASED COVERAGE
             Give stronger scenario coverage to Critical and High-risk
             requirements.
 
             Ensure important risks identified by the Risk & Test Strategy are
             represented in the scenarios.
 
-        17. NO HALLUCINATION
+        18. NO HALLUCINATION
             - Do not invent requirements.
             - Do not invent business rules.
             - Do not invent dependencies.
@@ -149,11 +173,11 @@ def build_test_scenario_prompt(
             - Do not invent unsupported system behavior.
             - Do not assume implementation details not present in the input.
 
-        18. SOURCE FIDELITY
+        19. SOURCE FIDELITY
             Preserve the meaning of the supplied requirement.
             Do not silently change or reinterpret business rules.
 
-        19. CONFIDENCE
+        20. CONFIDENCE
             overall_scenario_confidence must be between 0 and 1.
 
             Reduce confidence when the supplied requirements or risk strategy
@@ -182,7 +206,7 @@ def build_test_scenario_prompt(
               "requirement_id": "REQ-001",
               "title": "string",
               "description": "string",
-              "scenario_type": "Positive | Negative | Boundary | Error | Integration | Security | Performance | Reliability | Usability | Compatibility | Regression"
+              "scenario_type": "Positive | Negative | Boundary | Error | Integration | Security | Performance | Reliability | Usability | Compatibility | Regression",
               "priority": "Critical | High | Medium | Low",
               "preconditions": ["string"],
               "expected_behavior": "string",

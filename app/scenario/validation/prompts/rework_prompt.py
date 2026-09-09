@@ -46,14 +46,51 @@ REWORK INSTRUCTIONS:
    - preconditions
    - expected behavior
    - source requirement
+
+6a. IMPORTANT: scenario_type must be ONLY one of these exact values:
+    Positive, Negative, Boundary, Error, Integration, Security,
+    Performance, Reliability, Usability, Compatibility, Regression.
+
+    Auditability is NOT a valid scenario_type.
+    Functional is NOT a valid scenario_type.
+    Auditability, Functional, and other test types/domains must never
+    be used as scenario_type values.
+
+    If a scenario concerns auditability, select the scenario_type
+    that best represents the testing behavior, such as Security,
+    Integration, Positive, Negative, or Regression.
+
 7. Maintain appropriate positive, negative, boundary, error,
    integration, security, performance, usability, compatibility,
    and regression coverage where supported by the requirements.
+
 8. Do not remove valid risk-based coverage merely to reduce the
    number of scenarios.
+
 9. Do not introduce unsupported assumptions during rework.
-10. Return the complete revised ScenarioAnalysis, not only the
+
+10. OUTPUT SIZE RULES:
+    - Preserve existing valid scenarios wherever possible.
+    - Do not regenerate the entire scenario suite unnecessarily.
+    - Add only the minimum scenarios required to address the
+      validator findings.
+    - The final ScenarioAnalysis MUST contain no more than 18 scenarios.
+    - Prefer 1 to 2 scenarios per requirement.
+    - Critical and High-risk requirements may have up to 2 scenarios.
+    - Do not create duplicate scenarios when existing scenarios
+      already provide the required coverage.
+    - Keep descriptions, preconditions, and expected behavior concise.
+
+11. Return the complete revised ScenarioAnalysis, not only the
     changed scenarios.
+
+12. OUTPUT FORMAT:
+    - Return ONLY valid JSON.
+    - Do NOT include Markdown code fences.
+    - Do NOT include explanatory text before or after the JSON.
+    - Do NOT include comments such as // or /* ... */ inside the JSON.
+    - Use double quotes for all JSON keys and string values.
+    - The response must be directly parseable by Python json.loads().
 
 The revised scenarios must be ready for another independent
 validation review.

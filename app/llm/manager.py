@@ -1,4 +1,5 @@
 ﻿from openai import RateLimitError
+from groq import APIStatusError as GroqAPIStatusError
 from groq import RateLimitError as GroqRateLimitError
 from google.genai import errors
 
@@ -32,19 +33,21 @@ class LLMManager:
 
     @staticmethod
     def _is_rate_limit_error(error: Exception) -> bool:
-        """
-        Return True when the provider error represents
-        a rate-limit or quota failure.
-        """
-
         if isinstance(error, RATE_LIMIT_ERRORS):
             return True
+
+        if isinstance(error, GroqAPIStatusError):
+            error_body = getattr(error, "body", {}) or {}
+            error_data = error_body.get("error", {}) if isinstance(error_body, dict) else {}
+            return (
+                getattr(error, "status_code", None) == 429
+                or error_data.get("code") == "rate_limit_exceeded"
+            )
 
         if isinstance(error, errors.ClientError):
             return getattr(error, "code", None) == 429
 
         return False
-
     def _generate_with_provider(
         self,
         provider_name: str,

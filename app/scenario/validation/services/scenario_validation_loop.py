@@ -90,6 +90,7 @@ class ScenarioValidationLoop:
                 document_name=analysis.document_name,
                 requirement_context=requirement_context,
                 risk_strategy_context=risk_strategy_context,
+                retry_count=retry_count + 1,
             )
 
             retry_count += 1

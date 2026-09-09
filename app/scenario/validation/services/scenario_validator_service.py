@@ -99,21 +99,22 @@ class ScenarioValidatorService:
 
         for scenario in scenarios.scenarios:
             lines.append(
-                (
-                    f"{scenario.scenario_id}: "
-                    f"Requirement={scenario.requirement_id}, "
-                    f"Title={scenario.title}, "
-                    f"Description={scenario.description}, "
-                    f"Type={scenario.scenario_type}, "
-                    f"Priority={scenario.priority}, "
-                    f"Preconditions={scenario.preconditions}, "
-                    f"Expected Behavior={scenario.expected_behavior}, "
-                    f"Source Requirement={scenario.source_requirement}"
+                "\n".join(
+                    [
+                        f"Scenario ID: {scenario.scenario_id}",
+                        f"Requirement ID: {scenario.requirement_id}",
+                        f"Title: {scenario.title}",
+                        f"Description: {scenario.description}",
+                        f"Type: {scenario.scenario_type.value}",
+                        f"Priority: {scenario.priority}",
+                        f"Preconditions: {scenario.preconditions}",
+                        f"Expected Behavior: {scenario.expected_behavior}",
+                        f"Source Requirement: {scenario.source_requirement}",
+                    ]
                 )
             )
 
-        return "\n".join(lines)
-
+        return "\n\n--- SCENARIO ---\n\n".join(lines)
     @staticmethod
     def _parse_review_response(
         content: str,
