@@ -46,6 +46,7 @@ class ScenarioReworkService:
             issues=review.issues,
             required_changes=review.required_changes,
             retry_count=retry_count,
+            risk_strategy_context=risk_strategy_context,
         )
 
         llm_response = self.llm_manager.generate(

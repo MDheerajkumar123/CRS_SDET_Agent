@@ -3,7 +3,11 @@ from groq import APIStatusError as GroqAPIStatusError
 from groq import RateLimitError as GroqRateLimitError
 from google.genai import errors
 
-from .config import PROVIDER_CONFIG, MAX_RETRIES
+from .config import (
+    PROVIDER_CONFIG,
+    MAX_EMPTY_RESPONSE_RETRIES,
+    MAX_RETRIES,
+)
 from .router import (
     get_provider_for_task,
     get_fallback_provider,
@@ -20,6 +24,10 @@ RATE_LIMIT_ERRORS = (
     RateLimitError,
     GroqRateLimitError,
 )
+
+
+class EmptyLLMResponseError(ValueError):
+    """Raised when a provider responds without usable generated content."""
 
 
 class LLMManager:
@@ -65,7 +73,9 @@ class LLMManager:
 
         last_error = None
 
-        for attempt in range(1, MAX_RETRIES + 1):
+        attempt_limit = MAX_RETRIES
+
+        for attempt in range(1, attempt_limit + 1):
 
             try:
                 response = provider.generate(
@@ -73,8 +83,8 @@ class LLMManager:
                     model=model,
                 )
 
-                if not response:
-                    raise ValueError(
+                if not isinstance(response, str) or not response.strip():
+                    raise EmptyLLMResponseError(
                         f"{provider_name} returned an empty response."
                     )
 
@@ -86,8 +96,20 @@ class LLMManager:
                 print(
                     f"[LLMManager] "
                     f"{provider_name} attempt "
-                    f"{attempt}/{MAX_RETRIES} failed: {error}"
+                    f"{attempt}/{attempt_limit} failed: {error}"
                 )
+
+                if isinstance(error, EmptyLLMResponseError):
+                    # A repeated empty completion consumes quota without
+                    # evidence that the provider has recovered. Move to the
+                    # ordered fallback after the conservative configured limit.
+                    attempt_limit = min(
+                        attempt_limit,
+                        max(1, MAX_EMPTY_RESPONSE_RETRIES),
+                    )
+
+                    if attempt >= attempt_limit:
+                        break
 
                 if self._is_rate_limit_error(error):
                     print(
@@ -99,7 +121,7 @@ class LLMManager:
 
         raise RuntimeError(
             f"{provider_name} failed after "
-            f"{MAX_RETRIES} attempts."
+            f"{attempt_limit} attempts."
         ) from last_error
 
     def generate(

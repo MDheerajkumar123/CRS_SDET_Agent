@@ -38,6 +38,7 @@ class RequirementAnalyzer:
         retrieved_results = self.retriever.search(
             query=query,
             n_results=n_results,
+            document_name=document_name,
         )
 
         if not retrieved_results:

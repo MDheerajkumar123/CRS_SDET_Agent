@@ -39,3 +39,5 @@ Thumbs.db
 
 # Legacy root-level test scripts
 /test_*.py
+
+data/test_case_analysis_reworked.json

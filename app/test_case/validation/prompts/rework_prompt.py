@@ -79,6 +79,20 @@ Requirement → Scenario → Test Design → Test Case.
 
 8. Expected results must be observable and testable.
 
+8A. For a Pairwise design, preserve and execute every combination explicitly
+defined in the current test-data/design context. The revised steps must either
+enumerate those combinations or explicitly require the reusable procedure to
+run once for every listed combination. Do not invent combinations.
+
+8B. Preserve named tools only when they are mandated by the supplied context.
+Otherwise use generic capability language rather than naming a product,
+platform, proxy, accessibility reader, or key-storage implementation.
+
+8C. For encryption-key management, log immutability, or similar controls with
+insufficient implementation detail, provide a manual evidence-review step and
+an explicit Security/Ops dependency. Do not invent mechanisms, algorithms,
+retention periods, products, or compliance controls.
+
 9. Correct inappropriate test types when required by the review feedback.
 
 10. Remove duplicate or substantially overlapping test cases when the reviewer

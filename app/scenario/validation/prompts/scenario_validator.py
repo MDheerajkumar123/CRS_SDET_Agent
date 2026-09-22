@@ -89,14 +89,16 @@ IMPORTANT REVIEW RULES:
    Do not require invented numerical boundaries.
 
 9. ERROR COVERAGE
-   Verify relevant documented failures such as:
-   - Payment failures
-   - Gateway failures
-   - Network interruptions
-   - Timeouts
-   - Session expiration
-   - Refund failures
-   - Repeated submissions
+    Verify relevant documented failures such as:
+    - Network interruptions
+    - Timeouts
+    - Session expiration
+    - Invalid operations
+    - Repeated submissions
+    - External dependency failures
+
+    Only require an error scenario when the corresponding condition is
+    supported by the supplied requirements, dependencies, or strategy.
 
 10. INTEGRATION COVERAGE
     Verify documented external systems and dependencies are covered
@@ -110,7 +112,8 @@ IMPORTANT REVIEW RULES:
     Verify performance scenarios only when supported by the
     requirements or risk strategy.
 
-    Do not require invented response-time or throughput targets.
+    Do not require invented response-time, throughput, workload,
+    or numerical targets.
 
 13. USABILITY AND COMPATIBILITY
     Verify these scenarios only where requirements or risk strategy
@@ -120,10 +123,24 @@ IMPORTANT REVIEW RULES:
     High-risk existing behavior should receive regression coverage
     when appropriate.
 
-15. RISK ALIGNMENT
-    - Critical and High-risk requirements require stronger coverage.
-    - Scenario priority must align with the supplied risk level.
-    - Important risks from the strategy must be represented.
+15. STRATEGY TEST-TYPE MAPPING
+    The Risk & Test Strategy may recommend test types that are not
+    represented directly by ScenarioType.
+
+    In particular:
+    - Auditability is a valid TestType in the strategy layer.
+    - Auditability is NOT a valid ScenarioType.
+    - Do NOT require a separate scenario whose scenario_type is
+      "Auditability".
+    - Evaluate whether the underlying auditability objective is
+      adequately represented by an appropriate supported scenario
+      type such as Regression, Security, Positive, Negative, or
+      Integration.
+    - Do not invent requirements, dependencies, implementation details,
+      numerical boundaries, or system behavior merely to satisfy a
+      strategy recommendation.
+
+    A strategy recommendation must not override source fidelity.
 
 16. DUPLICATE DETECTION
     Identify scenarios that test exactly the same behavior without

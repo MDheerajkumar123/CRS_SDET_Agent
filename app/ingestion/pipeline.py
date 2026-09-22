@@ -19,10 +19,16 @@ class IngestionResult:
 
 class IngestionPipeline:
 
-    def __init__(self):
-        self.chunker = SectionChunker()
-        self.embedding_service = EmbeddingService()
-        self.vector_store = ChromaVectorStore()
+    def __init__(
+        self,
+        chunker: SectionChunker | None = None,
+        embedding_service: EmbeddingService | None = None,
+        vector_store: ChromaVectorStore | None = None,
+    ):
+        """Create an ingestion pipeline with optional testable dependencies."""
+        self.chunker = chunker or SectionChunker()
+        self.embedding_service = embedding_service or EmbeddingService()
+        self.vector_store = vector_store or ChromaVectorStore()
 
     def ingest(self, file_path: str) -> IngestionResult:
 

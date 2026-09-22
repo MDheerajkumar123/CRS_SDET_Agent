@@ -42,22 +42,15 @@ class ChromaVectorStore:
         if not chunks:
             return
 
-        # Remove existing records with the same chunk IDs.
-        chunk_ids = [
-            chunk.chunk_id
-            for chunk in chunks
-        ]
-
-        existing = self.collection.get(
-            ids=chunk_ids,
-        )
-
-        existing_ids = existing.get("ids", [])
-
-        if existing_ids:
+        # A document is replaced as a unit.  This makes re-ingestion
+        # idempotent even when the document now produces fewer chunks, while
+        # the document-scoped filter prevents another document from changing.
+        for document_name in {chunk.document_name for chunk in chunks}:
             self.collection.delete(
-                ids=existing_ids,
+                where={"document_name": document_name},
             )
+
+        chunk_ids = [chunk.chunk_id for chunk in chunks]
 
         self.collection.add(
             ids=chunk_ids,
@@ -92,6 +85,7 @@ class ChromaVectorStore:
         self,
         query_embedding: list[float],
         n_results: int = 5,
+        document_name: str | None = None,
     ) -> dict:
         if not query_embedding:
             raise ValueError(
@@ -103,12 +97,19 @@ class ChromaVectorStore:
                 "n_results must be greater than 0."
             )
 
-        return self.collection.query(
-            query_embeddings=[query_embedding],
-            n_results=n_results,
-            include=[
+        query_kwargs = {
+            "query_embeddings": [query_embedding],
+            "n_results": n_results,
+            "include": [
                 "documents",
                 "metadatas",
                 "distances",
             ],
-        )
+        }
+
+        if document_name:
+            query_kwargs["where"] = {
+                "document_name": document_name,
+            }
+
+        return self.collection.query(**query_kwargs)

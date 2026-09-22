@@ -46,14 +46,44 @@ def build_test_design_prompt(
              details.
 
         3. Test Design Techniques
-           Select the most appropriate technique based on the scenario:
-           - Equivalence Partitioning
-           - Boundary Value Analysis
-           - Decision Table
-           - State Transition
-           - Error Guessing
-           - Pairwise
-           - Use Case
+
+          The field "test_design_technique" MUST contain exactly ONE of
+          the following values:
+
+          - Equivalence Partitioning
+          - Boundary Value Analysis
+          - Decision Table
+          - State Transition
+          - Error Guessing
+          - Pairwise
+          - Use Case
+
+          These are the ONLY valid TestDesignTechnique values.
+
+          NEVER use test types, scenario types, risk levels, requirement types,
+          or other classifications as test_design_technique values.
+
+          INVALID examples include:
+          - Functional
+          - Negative
+          - Boundary
+          - Integration
+          - Regression
+          - Security
+          - Performance
+          - Usability
+          - Compatibility
+          - Reliability
+          - Auditability
+          - Positive
+          - High
+          - Critical
+
+          Important:
+          - "Boundary" is a ScenarioType, but "Boundary Value Analysis" is
+            a TestDesignTechnique.
+          - "Performance", "Security", "Regression", "Integration", etc. are
+            test/scenario categories, NOT design techniques.
 
         4. Risk Alignment
            - High and critical-risk scenarios must receive appropriate

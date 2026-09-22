@@ -77,16 +77,15 @@ def build_test_scenario_prompt(
            Do not invent numerical boundaries that are not documented.
 
         6. ERROR SCENARIOS
-           Cover documented error and exception conditions, including:
-           - Payment failures
-           - Gateway failures
-           - Network interruptions
-           - Timeouts
-           - Session expiration
-           - Refund failures
-           - Repeated submissions
+            Cover documented error and exception conditions such as:
+            - Network interruptions
+            - Timeouts
+            - Session expiration
+            - Invalid operations
+            - Repeated submissions
+            - External dependency failures
 
-           Only include conditions supported by the supplied requirements.
+            Only include conditions supported by the supplied requirements.
 
         7. INTEGRATION SCENARIOS
            Cover interactions with documented external systems or
@@ -94,13 +93,13 @@ def build_test_scenario_prompt(
            identified dependencies.
 
         8. SECURITY SCENARIOS
-           Include security scenarios when requirements involve:
-           - Authentication
-           - Authorization
-           - Sensitive payment information
-           - Data protection
-           - Masking
-           - Security-sensitive payment actions
+            Include security scenarios when requirements involve:
+            - Authentication
+            - Authorization
+            - Sensitive data
+            - Data protection
+            - Access control
+            - Security-sensitive operations
 
         9. PERFORMANCE SCENARIOS
            Include performance scenarios only when requirements or the risk

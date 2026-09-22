@@ -2,6 +2,7 @@ from crewai import Task
 
 from app.test_case.agents.test_case_agent import TestCaseAgent
 from app.test_case.models.test_case import TestCaseAnalysis
+from app.test_case.prompts.test_case import build_test_case_prompt
 
 
 class TestCaseTask:
@@ -22,35 +23,13 @@ class TestCaseTask:
         self.agent = TestCaseAgent().get_agent()
 
     def create_task(self) -> Task:
-        description = f"""
-        Generate detailed manual test cases for the document:
-        {self.document_name}
-
-        Requirement Context:
-        {self.requirement_context}
-
-        Risk & Test Strategy Context:
-        {self.risk_strategy_context}
-
-        Test Scenario Context:
-        {self.scenario_context}
-
-        Test Design Context:
-        {self.test_design_context}
-
-        Follow the Test Case generation rules strictly.
-
-        Maintain complete traceability:
-        Requirement → Scenario → Test Design → Test Case.
-
-        Do not invent unsupported requirements, business rules,
-        implementation details, or exact test data.
-
-        Generate executable manual test steps and corresponding
-        expected results.
-
-        Return the result as TestCaseAnalysis.
-        """
+        description = build_test_case_prompt(
+            document_name=self.document_name,
+            requirement_context=self.requirement_context,
+            risk_strategy_context=self.risk_strategy_context,
+            scenario_context=self.scenario_context,
+            test_design_context=self.test_design_context,
+        )
 
         expected_output = """
         A validated TestCaseAnalysis containing:

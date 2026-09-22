@@ -27,4 +27,7 @@ PROVIDER_CONFIG = {
 }
 
 MAX_RETRIES = int(os.getenv("MAX_RETRIES", "3"))
+MAX_EMPTY_RESPONSE_RETRIES = int(
+    os.getenv("MAX_EMPTY_RESPONSE_RETRIES", "1")
+)
 QUALITY_THRESHOLD = int(os.getenv("QUALITY_THRESHOLD", "85"))

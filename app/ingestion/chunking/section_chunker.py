@@ -1,3 +1,5 @@
+from hashlib import sha256
+
 from ..models.document import ParsedDocument
 from .models import DocumentChunk
 from ..models.source import SourceReference
@@ -30,6 +32,12 @@ class SectionChunker:
     def chunk(self, document: ParsedDocument) -> list[DocumentChunk]:
         chunks = []
         chunk_counter = 1
+        # The document name is the retrieval identity used by the current
+        # pipeline.  A stable digest makes chunk IDs unique across documents
+        # while preserving deterministic same-document re-ingestion.
+        document_id = sha256(
+            document.document_name.encode("utf-8")
+        ).hexdigest()[:16]
 
         for section in document.sections:
             content = section.content.strip()
@@ -51,7 +59,10 @@ class SectionChunker:
                 if chunk_text:
                     chunks.append(
                         DocumentChunk(
-                            chunk_id=f"CHUNK-{chunk_counter:04d}",
+                            chunk_id=(
+                                f"DOC-{document_id}-"
+                                f"CHUNK-{chunk_counter:04d}"
+                            ),
                             document_name=document.document_name,
                             section_id=section.section_id,
                             section_title=section.title,

@@ -34,6 +34,7 @@ class CRSRetriever:
         self,
         query: str,
         n_results: int = 5,
+        document_name: str | None = None,
     ) -> list[RetrievedContext]:
 
         if not query or not query.strip():
@@ -48,6 +49,7 @@ class CRSRetriever:
         results = self.vector_store.search(
             query_embedding=query_embedding,
             n_results=n_results,
+            document_name=document_name,
         )
 
         documents = results.get("documents", [[]])[0]

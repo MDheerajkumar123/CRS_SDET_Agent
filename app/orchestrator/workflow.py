@@ -542,6 +542,17 @@ class CRSWorkflow:
         )
 
         if not scenario_validation.passed:
+            review = scenario_validation.final_review
+
+            print("\n=== FINAL SCENARIO VALIDATION REVIEW ===")
+            print("STATUS:", review.status.value)
+            print("SCORE:", review.score)
+            print("ISSUES:", review.issues)
+            print("REQUIRED CHANGES:", review.required_changes)
+            print("RETRY COUNT:", scenario_validation.retry_count)
+            print("MAX RETRIES:", scenario_validation.max_retries)
+            print("=== END FINAL SCENARIO VALIDATION REVIEW ===\n")
+
             raise RuntimeError(
                 "Scenario validation failed."
             )

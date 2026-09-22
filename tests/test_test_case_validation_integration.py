@@ -2,7 +2,11 @@
 from pathlib import Path
 
 from app.analysis.models.requirement import RequirementAnalysis
-from app.crew.crs_analyzer_crew import CRSAnalyzerCrew
+from app.analysis.retrieval.retriever import CRSRetriever
+from app.analysis.services.requirement_analyzer import RequirementAnalyzer
+from app.ingestion.pipeline import IngestionPipeline
+from app.ingestion.vector_store.chroma_store import ChromaVectorStore
+from app.llm.manager import LLMManager
 from app.strategy.crew.risk_strategy_crew import RiskStrategyCrew
 from app.scenario.crew.test_scenario_crew import TestScenarioCrew
 from app.test_design.crew.test_design_crew import TestDesignCrew
@@ -13,14 +17,33 @@ from app.test_case.validation.services.test_case_validator_service import (
 )
 
 
-DOCUMENT_NAME = "SmartBank_BRD_ERD_AI_Practice_New.docx"
+CRS_PATH = "data/input/Sample.docx"
+DOCUMENT_NAME = Path(CRS_PATH).name
 
 
-def test_real_test_case_validation_integration():
+
+def test_real_test_case_validation_integration(tmp_path):
+    # ---------------------------------------------------------
+    # 0. Ingest CRS input document
+    # ---------------------------------------------------------
+    vector_store = ChromaVectorStore(
+        persist_directory=str(tmp_path / "chroma"),
+        collection_name="test_case_validation_integration",
+    )
+    ingestion_result = IngestionPipeline(
+        vector_store=vector_store,
+    ).ingest(CRS_PATH)
+
+    assert ingestion_result.document_name == DOCUMENT_NAME
+    assert ingestion_result.chunks > 0
     # ---------------------------------------------------------
     # 1. CRS Analyzer
     # ---------------------------------------------------------
-    analyzer_crew = CRSAnalyzerCrew(
+    analyzer = RequirementAnalyzer(
+        retriever=CRSRetriever(vector_store=vector_store),
+        llm_manager=LLMManager(),
+    )
+    analysis, _ = analyzer.analyze(
         document_name=DOCUMENT_NAME,
         query=(
             "Identify all testable requirements, business rules, "
@@ -28,9 +51,6 @@ def test_real_test_case_validation_integration():
         ),
         n_results=5,
     )
-
-    analyzer_result = analyzer_crew.kickoff()
-    analysis = analyzer_result.pydantic
 
     assert isinstance(analysis, RequirementAnalysis)
     assert len(analysis.requirements) > 0
@@ -132,26 +152,6 @@ def test_real_test_case_validation_integration():
     print(
         f"Test cases generated: "
         f"{len(test_case_analysis.test_cases)}"
-    )
-
-    # ---------------------------------------------------------
-    # Save generated TestCaseAnalysis as reusable fixture
-    # ---------------------------------------------------------
-    data_directory = Path("data")
-    data_directory.mkdir(exist_ok=True)
-
-    fixture_path = (
-        data_directory / "test_case_analysis_latest.json"
-    )
-
-    fixture_path.write_text(
-        test_case_context,
-        encoding="utf-8",
-    )
-
-    print(
-        f"Saved TestCaseAnalysis fixture: "
-        f"{fixture_path}"
     )
 
     # ---------------------------------------------------------

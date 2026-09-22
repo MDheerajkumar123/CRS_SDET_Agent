@@ -63,7 +63,10 @@ def build_test_case_prompt(
         - Source Test Design reference
 
         4. TEST TYPES
-        Use only these test types:
+
+        Use ONLY ONE of the following exact values for the
+        "test_type" field:
+
         - Functional
         - Negative
         - Boundary
@@ -75,6 +78,32 @@ def build_test_case_prompt(
         - Compatibility
         - Reliability
         - Auditability
+
+        These are the ONLY valid TestCaseType values.
+
+        Do NOT use:
+        - ScenarioType values as a substitute for TestCaseType
+        - TestDesignTechnique values as a TestCaseType
+        - Risk levels as a TestCaseType
+        - Requirement types as a TestCaseType
+
+        Examples of INVALID test_type values:
+        - Positive
+        - Error
+        - Equivalence Partitioning
+        - Boundary Value Analysis
+        - Decision Table
+        - State Transition
+        - High
+        - Critical
+        - Business Rule
+
+        Important:
+        - "Positive" and "Error" are ScenarioType values.
+        - "Equivalence Partitioning" and "Boundary Value Analysis" are
+          TestDesignTechnique values.
+        - "High" and "Critical" are risk levels.
+        - The test_type must always be one of the eleven allowed values above.
 
         5. TEST DATA
         - Define data conditions required to execute the test.
@@ -88,11 +117,47 @@ def build_test_case_prompt(
         - Do not write Selenium, Playwright, API automation, SQL, or CI/CD code.
         - Do not combine multiple independent actions into one unclear step.
 
+        6A. PAIRWISE DESIGNS
+        - When the referenced test design uses "Pairwise", use only the
+          combinations explicitly defined in that design's test-data context.
+        - Either enumerate each defined pairwise combination in the steps, or
+          state that the reusable procedure must be executed once for every
+          explicitly listed combination.
+        - The steps and expected results must make that coverage obligation
+          clear; do not execute only a representative combination.
+        - Do not infer or create a matrix, devices, operating systems,
+          browsers, payment methods, or combinations absent from the source.
+
+        6B. TOOLS AND PLATFORM MECHANISMS
+        - Preserve a named tool, product, or platform mechanism only when it
+          is explicitly required by the supplied source context.
+        - Otherwise describe the required capability generically, for example
+          "an appropriate network traffic capture tool", "the applicable
+          platform security mechanism", or "the applicable platform
+          accessibility screen reader".
+        - Do not turn an implementation suggestion into a CRS requirement.
+
+        6C. UNDERSPECIFIED SECURITY OR OPERATIONS CONTROLS
+        - For controls such as encryption-key management or log immutability,
+          give concrete manual checks only when the source specifies the
+          relevant evidence, mechanism, or acceptance condition.
+        - If details are not supplied, identify the verification dependency on
+          the appropriate Security/Ops team or approved implementation
+          evidence. State what evidence must be reviewed and that gaps must
+          be recorded; do not claim an undocumented control is verified.
+        - Do not invent algorithms, key lengths, key rotation, storage,
+          signing, hashing, WORM storage, retention, SIEM products, or
+          compliance standards.
+
         7. EXPECTED RESULTS
         - Expected results must be observable and testable.
         - They must directly correspond to the intended behavior of the
           requirement and test design.
         - Do not invent implementation-specific results.
+        - For an underspecified security/operations control, the expected
+          result may confirm that approved evidence was reviewed with the
+          responsible team and that any unresolved implementation dependency
+          is documented.
 
         8. RISK ALIGNMENT
         - Prioritize high-risk and critical requirements appropriately.

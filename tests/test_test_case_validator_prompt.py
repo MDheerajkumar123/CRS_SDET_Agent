@@ -23,6 +23,9 @@ def test_test_case_validator_prompt():
     assert "COVERAGE" in prompt
     assert "DUPLICATES" in prompt
     assert "TESTABILITY" in prompt
+    assert "Pairwise designs" in prompt
+    assert "named tool" in prompt
+    assert "Security/Ops" in prompt
     assert "PASS" in prompt
     assert "REWORK" in prompt
     assert "valid JSON" in prompt

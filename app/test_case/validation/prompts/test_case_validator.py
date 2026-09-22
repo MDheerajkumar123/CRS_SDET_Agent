@@ -140,6 +140,15 @@ Do not require irrelevant test types where the source does not justify them.
 11. TESTABILITY
 - Each test case should be practical for a QA tester to understand and execute.
 - Flag vague, incomplete, contradictory, or non-verifiable test cases.
+- For Pairwise designs, verify that all explicitly defined combinations are
+  enumerated or that the reusable procedure is explicitly executed once for
+  each listed combination. Do not require invented combinations.
+- A named tool or platform mechanism is acceptable only when mandated by the
+  supplied source. Otherwise require generic capability wording.
+- For underspecified encryption-key management, log immutability, or related
+  Security/Ops controls, accept a concrete approved-evidence review and an
+  explicit responsible-team dependency. Do not require undocumented control
+  mechanisms or reject a case solely because the CRS leaves them unspecified.
 
 12. V1 SCOPE
 This is a test case design system.
