@@ -22,6 +22,9 @@ def test_test_case_prompt_requires_source_faithful_pairwise_and_security_guidanc
     assert "network traffic capture tool" in prompt
     assert "Security/Ops team" in prompt
     assert "Do not invent algorithms, key lengths" in prompt
+    assert '"Availability"' in prompt
+    assert "Never create a new test_type" in prompt
+    assert '"test_type" is a controlled classification field' in prompt
 
 
 def test_test_case_rework_prompt_preserves_pairwise_and_evidence_dependencies():

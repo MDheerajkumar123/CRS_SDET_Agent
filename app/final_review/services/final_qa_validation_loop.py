@@ -103,6 +103,31 @@ class FinalQAValidationLoop:
             )
 
             # ---------------------------------------------------------
+            # TEMPORARY DIAGNOSTIC OUTPUT
+            # ---------------------------------------------------------
+            # This allows us to see the exact Final QA reviewer
+            # decision before the workflow continues.
+            print("\n" + "=" * 70)
+            print("FINAL QA REVIEW RESULT")
+            print("=" * 70)
+            print(f"STATUS: {review.status}")
+            print(f"SCORE: {review.score}")
+            print(f"ISSUES: {review.issues}")
+            print(
+                f"REQUIRED CHANGES: "
+                f"{review.required_changes}"
+            )
+            print(
+                f"SUMMARY: "
+                f"{review.review_summary}"
+            )
+            print(f"RETRY COUNT: {retry_count}")
+            print(f"MAX RETRIES: {self.max_retries}")
+            print("=" * 70)
+            print("END FINAL QA REVIEW RESULT")
+            print("=" * 70 + "\n")
+
+            # ---------------------------------------------------------
             # 2. PASS
             # ---------------------------------------------------------
             if review.status == FinalReviewStatus.PASS:

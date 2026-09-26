@@ -73,7 +73,33 @@ REWORK INSTRUCTIONS:
 
 10. Do not introduce unsupported assumptions during rework.
 
-11. OUTPUT SIZE RULES:
+    11. VALIDATOR-SPECIFIC REWORK RULES:
+
+        - Never introduce technical implementation details unless they
+          are explicitly present in the supplied requirements or risk
+          strategy.
+        - Do not invent protocol versions, numerical targets,
+          percentages, timing values, masking formats, workload values,
+          or availability targets.
+        - When a requirement uses an abstract term such as "protect",
+          "encrypt", "mask", "support", or "available", preserve that
+          same level of abstraction in the scenario.
+        - If the validator identifies missing dependency coverage, add
+          the minimum scenario required to directly validate that
+          dependency.
+        - If positive coverage is explicitly supported by the
+          requirements or QA strategy, ensure at least one scenario uses
+          scenario_type "Positive".
+        - Do not create scenarios merely because a test type exists in
+          the strategy. Every scenario must remain traceable to a
+          supplied requirement.
+        - Do not use preconditions to introduce unsupported
+          requirements, targets, implementation details, or environment
+          guarantees.
+        - Apply every validator-required change while preserving valid
+          existing scenarios wherever possible.
+
+12. OUTPUT SIZE RULES:
     - Preserve existing valid scenarios wherever possible.
     - Do not regenerate the entire scenario suite unnecessarily.
     - Add only the minimum scenarios required to address the
@@ -85,20 +111,20 @@ REWORK INSTRUCTIONS:
       already provide the required coverage.
     - Keep descriptions, preconditions, and expected behavior concise.
 
-12. Return the complete revised ScenarioAnalysis, not only the
+13. Return the complete revised ScenarioAnalysis, not only the
     changed scenarios.
 
-13. STRICT JSON SCHEMA AND DATA TYPES:
+14. STRICT JSON SCHEMA AND DATA TYPES:
 
     The final response MUST conform exactly to the ScenarioAnalysis
     schema.
 
     ScenarioAnalysis:
-    {
+    {{
       "document_name": "string",
       "scenario_summary": "string",
       "scenarios": [
-        {
+        {{
           "scenario_id": "string",
           "requirement_id": "string",
           "title": "string",
@@ -108,10 +134,10 @@ REWORK INSTRUCTIONS:
           "preconditions": ["string"],
           "expected_behavior": "string",
           "source_requirement": "string"
-        }
+        }}
       ],
       "overall_scenario_confidence": "number between 0 and 1"
-    }
+    }}
 
     STRICT TYPE RULES:
     - document_name MUST be a string.
@@ -142,7 +168,7 @@ REWORK INSTRUCTIONS:
         "System records the refund."
       ]
 
-14. OUTPUT FORMAT:
+15. OUTPUT FORMAT:
     - Return ONLY valid JSON.
     - Do NOT include Markdown code fences.
     - Do NOT include explanatory text before or after the JSON.

@@ -11,10 +11,14 @@ from app.test_case.services.test_case_service import TestCaseService
 from app.rtm.services.rtm_service import RTMService
 
 from app.validation.services.validation_loop import ValidationLoop
+from app.validation.services.requirement_validator import RequirementValidator
+from app.validation.services.rework_service import RequirementReworkService
 
 from app.scenario.validation.services.scenario_validation_loop import (
     ScenarioValidationLoop,
 )
+from app.scenario.validation.services.scenario_validator_service import ScenarioValidatorService
+from app.scenario.validation.services.scenario_rework_service import ScenarioReworkService
 
 from app.test_case.validation.services.test_case_validation_loop import (
     TestCaseValidationLoop,
@@ -31,15 +35,19 @@ from app.test_case.validation.services.test_case_rework_service import (
 from app.rtm.validation.services.rtm_validation_loop import (
     RTMValidationLoop,
 )
+from app.rtm.validation.services.rtm_validator_service import RTMValidatorService
+from app.rtm.validation.services.rtm_rework_service import RTMReworkService
 
 from app.final_review.services.final_qa_validation_loop import (
     FinalQAValidationLoop,
 )
+from app.final_review.services.final_qa_reviewer_service import FinalQAReviewerService
+from app.final_review.services.final_qa_rework_service import FinalQAReworkService
 
 from app.excel.excel_generator import ExcelGenerator
 
 
-def create_crs_workflow() -> CRSWorkflow:
+def create_crs_workflow(event_publisher=None) -> CRSWorkflow:
     """
     Create the production CRS SDET workflow with all
     real application dependencies configured.
@@ -52,7 +60,7 @@ def create_crs_workflow() -> CRSWorkflow:
     # Shared LLM Manager
     # ------------------------------------------------------------
 
-    llm_manager = LLMManager()
+    llm_manager = LLMManager(event_publisher=event_publisher)
 
     # ------------------------------------------------------------
     # Core Services
@@ -88,13 +96,21 @@ def create_crs_workflow() -> CRSWorkflow:
     # Requirement Validation
     # ------------------------------------------------------------
 
-    requirement_validator_loop = ValidationLoop()
+    requirement_validator_loop = ValidationLoop(
+        validator=RequirementValidator(llm_manager=llm_manager),
+        rework_service=RequirementReworkService(llm_manager=llm_manager),
+        event_publisher=event_publisher,
+    )
 
     # ------------------------------------------------------------
     # Scenario Validation
     # ------------------------------------------------------------
 
-    scenario_validator_loop = ScenarioValidationLoop()
+    scenario_validator_loop = ScenarioValidationLoop(
+        validator=ScenarioValidatorService(llm_manager=llm_manager),
+        rework_service=ScenarioReworkService(llm_manager=llm_manager),
+        event_publisher=event_publisher,
+    )
 
     # ------------------------------------------------------------
     # Test Case Validation
@@ -111,19 +127,27 @@ def create_crs_workflow() -> CRSWorkflow:
     test_case_validator_loop = TestCaseValidationLoop(
         validator_service=test_case_validator_service,
         rework_service=test_case_rework_service,
+        event_publisher=event_publisher,
     )
 
     # ------------------------------------------------------------
     # RTM Validation
     # ------------------------------------------------------------
 
-    rtm_validation_loop = RTMValidationLoop()
+    rtm_validation_loop = RTMValidationLoop(
+        validator_service=RTMValidatorService(llm_manager=llm_manager),
+        rework_service=RTMReworkService(llm_manager=llm_manager),
+        event_publisher=event_publisher,
+    )
 
     # ------------------------------------------------------------
     # Final QA Validation
     # ------------------------------------------------------------
 
-    final_qa_loop = FinalQAValidationLoop()
+    final_qa_loop = FinalQAValidationLoop(
+        reviewer_service=FinalQAReviewerService(llm_manager=llm_manager),
+        rework_service=FinalQAReworkService(llm_manager=llm_manager),
+    )
 
     # ------------------------------------------------------------
     # Deterministic Excel Generator
@@ -160,4 +184,7 @@ def create_crs_workflow() -> CRSWorkflow:
         final_qa_loop=final_qa_loop,
 
         excel_generator=excel_generator,
+
+        event_publisher=event_publisher,
+        llm_manager=llm_manager,
     )

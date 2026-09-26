@@ -24,6 +24,7 @@ class RTMValidationLoop:
         validator_service=None,
         rework_service=None,
         max_retries: int = 3,
+        event_publisher=None,
     ):
         self.validator_service = (
             validator_service or RTMValidatorService()
@@ -32,6 +33,11 @@ class RTMValidationLoop:
             rework_service or RTMReworkService()
         )
         self.max_retries = max_retries
+        self.event_publisher = event_publisher
+
+    def _emit(self, event_type, **metadata):
+        if self.event_publisher:
+            self.event_publisher({"event_type": event_type, "stage": "RTM Validator", "message": "RTM validation requires rework." if event_type == "REWORK_STARTED" else "RTM artifact reworked.", "metadata": metadata})
 
     def run(
         self,
@@ -74,6 +80,7 @@ class RTMValidationLoop:
                 )
 
             retry_count += 1
+            self._emit("REWORK_STARTED", attempt=retry_count, issues=review.issues, score=getattr(review, "score", None))
 
             request = RTMReworkRequest(
                 document_name=document_name,
@@ -86,3 +93,4 @@ class RTMValidationLoop:
             )
 
             current_rtm = self.rework_service.rework(request)
+            self._emit("REWORK_COMPLETED", attempt=retry_count)

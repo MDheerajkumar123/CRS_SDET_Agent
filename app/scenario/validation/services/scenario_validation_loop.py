@@ -22,6 +22,7 @@ class ScenarioValidationLoop:
         validator=None,
         rework_service=None,
         max_retries: int = 3,
+        event_publisher=None,
     ):
         if max_retries < 1:
             raise ValueError("max_retries must be at least 1.")
@@ -31,6 +32,11 @@ class ScenarioValidationLoop:
             rework_service or ScenarioReworkService()
         )
         self.max_retries = max_retries
+        self.event_publisher = event_publisher
+
+    def _emit(self, event_type, **metadata):
+        if self.event_publisher:
+            self.event_publisher({"event_type": event_type, "stage": "Scenario Validator", "message": "Scenario validation requires rework." if event_type == "REWORK_STARTED" else "Scenario artifact reworked.", "metadata": metadata})
 
     def run(
         self,
@@ -84,6 +90,7 @@ class ScenarioValidationLoop:
                     passed=False,
                 )
 
+            self._emit("REWORK_STARTED", attempt=retry_count + 1, issues=review.issues, score=getattr(review, "score", None))
             current_scenarios, _ = self.rework_service.rework(
                 scenarios=current_scenarios,
                 review=review,
@@ -94,3 +101,4 @@ class ScenarioValidationLoop:
             )
 
             retry_count += 1
+            self._emit("REWORK_COMPLETED", attempt=retry_count)

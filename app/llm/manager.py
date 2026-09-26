@@ -18,6 +18,7 @@ from .providers import (
     OpenRouterProvider,
 )
 from .models import LLMResponse
+from app.observability.events import WorkflowEvent
 
 
 RATE_LIMIT_ERRORS = (
@@ -32,12 +33,25 @@ class EmptyLLMResponseError(ValueError):
 
 class LLMManager:
 
-    def __init__(self):
+    def __init__(self, event_publisher=None):
+        self.event_publisher = event_publisher
+        self.current_stage: str | None = None
         self.providers = {
             "gemini": GeminiProvider(),
             "groq": GroqProvider(),
             "openrouter": OpenRouterProvider(),
         }
+
+    def set_stage(self, stage: str | None) -> None:
+        """Associate routing events with the workflow stage currently running."""
+        self.current_stage = stage
+
+    def _emit(self, event_type: str, message: str, **kwargs) -> None:
+        if getattr(self, "event_publisher", None) is not None:
+            self.event_publisher(WorkflowEvent(
+                event_type=event_type, stage=getattr(self, "current_stage", None),
+                message=message, **kwargs,
+            ))
 
     @staticmethod
     def _is_rate_limit_error(error: Exception) -> bool:
@@ -144,6 +158,12 @@ class LLMManager:
         last_error = None
 
         for index, provider_name in enumerate(providers_to_try):
+            model = PROVIDER_CONFIG[provider_name]["model"]
+            self._emit(
+                "LLM_STARTED", f"LLM request started via {provider_name}.",
+                provider=provider_name, model=model,
+                metadata={"task": task_name},
+            )
 
             try:
                 content = self._generate_with_provider(
@@ -151,21 +171,42 @@ class LLMManager:
                     prompt,
                 )
 
-                return LLMResponse(
+                response = LLMResponse(
                     content=content,
                     provider=provider_name,
-                    model=PROVIDER_CONFIG[provider_name]["model"],
+                    model=model,
                     task=task_name,
                     fallback_used=(index > 0),
                 )
+                self._emit(
+                    "LLM_COMPLETED", f"LLM request completed via {provider_name}.",
+                    provider=provider_name, model=model,
+                    metadata={"task": task_name, "fallback_used": index > 0},
+                )
+                return response
 
             except Exception as error:
                 last_error = error
+                self._emit(
+                    "LLM_FAILED", f"LLM provider {provider_name} failed.",
+                    provider=provider_name, model=model,
+                    metadata={"task": task_name},
+                )
 
                 if index < len(providers_to_try) - 1:
                     print(
                         f"[LLMManager] Provider "
                         f"'{provider_name}' failed."
+                    )
+                    fallback = providers_to_try[index + 1]
+                    self._emit(
+                        "LLM_FALLBACK", "Primary provider failed; switching to fallback.",
+                        provider=fallback, model=PROVIDER_CONFIG[fallback]["model"],
+                        metadata={
+                            "task": task_name, "primary_provider": provider_name,
+                            "primary_model": model, "fallback_provider": fallback,
+                            "fallback_model": PROVIDER_CONFIG[fallback]["model"],
+                        },
                     )
                     print(
                         f"[LLMManager] Switching to fallback "

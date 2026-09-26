@@ -1,5 +1,8 @@
 
-from typing import Any
+from typing import Any, Callable
+from time import perf_counter
+
+from app.observability.events import WorkflowEvent
 
 from pydantic import BaseModel
 
@@ -82,6 +85,8 @@ class CRSWorkflow:
         scenario_validator_loop=None,
         test_case_validator_loop=None,
         rtm_validator_loop=None,
+        event_publisher: Callable[[WorkflowEvent], None] | None = None,
+        llm_manager=None,
     ):
         self.ingestion_pipeline = ingestion_pipeline
         self.requirement_analyzer = requirement_analyzer
@@ -97,6 +102,35 @@ class CRSWorkflow:
         self.scenario_validator_loop = scenario_validator_loop
         self.test_case_validator_loop = test_case_validator_loop
         self.rtm_validator_loop = rtm_validator_loop
+        self.event_publisher = event_publisher
+        self.llm_manager = llm_manager
+
+    def _emit(self, event_type: str, stage: str | None, message: str, **kwargs) -> None:
+        if self.event_publisher is not None:
+            self.event_publisher(WorkflowEvent(event_type=event_type, stage=stage, message=message, **kwargs))
+
+    def _execute_stage(self, stage: str, action):
+        self._emit("STAGE_STARTED", stage, f"{stage} started.")
+        if self.llm_manager is not None:
+            self.llm_manager.set_stage(stage)
+        started = perf_counter()
+        try:
+            result = action()
+        except Exception:
+            self._emit("STAGE_FAILED", stage, f"{stage} failed.")
+            raise
+        self._emit("STAGE_COMPLETED", stage, f"{stage} completed.", metadata={"duration_seconds": round(perf_counter() - started, 2)})
+        return result
+
+    def _validation_event(self, stage: str, result) -> None:
+        review = getattr(result, "final_review", None)
+        metadata = {"passed": result.passed, "attempt": result.retry_count, "max_retries": result.max_retries}
+        if review is not None:
+            metadata.update({"score": getattr(review, "score", None), "issues": getattr(review, "issues", [])})
+        self._emit("VALIDATION_PASSED" if result.passed else "VALIDATION_FAILED", stage,
+                   f"{stage} validation {'passed' if result.passed else 'failed'}.", metadata=metadata)
+        if result.retry_count:
+            self._emit("REWORK_COMPLETED", stage, f"{stage} completed after rework.", metadata=metadata)
 
     # ============================================================
     # Context Helpers
@@ -480,32 +514,28 @@ class CRSWorkflow:
         Execute the complete CRS SDET workflow.
         """
 
+        self._emit("WORKFLOW_STARTED", None, "CRS SDET workflow started.")
         # --------------------------------------------------------
         # 1. Ingestion
         # --------------------------------------------------------
 
-        ingestion_result = self.ingest(
-            workflow_input
-        )
+        ingestion_result = self.ingest(workflow_input)
 
         # --------------------------------------------------------
         # 2. Requirement Analysis
         # --------------------------------------------------------
 
-        requirement_analysis, _ = self.analyze_requirements(
-            workflow_input,
-            ingestion_result,
-        )
+        requirement_analysis, _ = self._execute_stage("Requirement Analyzer", lambda: self.analyze_requirements(workflow_input, ingestion_result))
 
         # --------------------------------------------------------
         # 3. Requirement Validation
         # --------------------------------------------------------
 
-        requirement_validation = self.validate_requirements(
-            requirement_analysis
-        )
+        requirement_validation = self._execute_stage("Requirement Validator", lambda: self.validate_requirements(requirement_analysis))
+        self._validation_event("Requirement Validator", requirement_validation)
 
         if not requirement_validation.passed:
+            self._emit("STAGE_FAILED", "Requirement Validator", "Requirement validation failed.")
             raise RuntimeError(
                 "Requirement validation failed."
             )
@@ -518,30 +548,23 @@ class CRSWorkflow:
         # 4. Risk & Test Strategy
         # --------------------------------------------------------
 
-        strategy = self.generate_strategy(
-            requirement_analysis
-        )
+        strategy = self._execute_stage("Risk & Test Strategy", lambda: self.generate_strategy(requirement_analysis))
 
         # --------------------------------------------------------
         # 5. Scenario Generation
         # --------------------------------------------------------
 
-        scenario_analysis = self.generate_scenarios(
-            requirement_analysis,
-            strategy,
-        )
+        scenario_analysis = self._execute_stage("Scenario Generator", lambda: self.generate_scenarios(requirement_analysis, strategy))
 
         # --------------------------------------------------------
         # 6. Scenario Validation
         # --------------------------------------------------------
 
-        scenario_validation = self.validate_scenarios(
-            requirement_analysis,
-            strategy,
-            scenario_analysis,
-        )
+        scenario_validation = self._execute_stage("Scenario Validator", lambda: self.validate_scenarios(requirement_analysis, strategy, scenario_analysis))
+        self._validation_event("Scenario Validator", scenario_validation)
 
         if not scenario_validation.passed:
+            self._emit("STAGE_FAILED", "Scenario Validator", "Scenario validation failed.")
             review = scenario_validation.final_review
 
             print("\n=== FINAL SCENARIO VALIDATION REVIEW ===")
@@ -565,37 +588,23 @@ class CRSWorkflow:
         # 7. Test Design Generation
         # --------------------------------------------------------
 
-        test_design_analysis = self.generate_test_designs(
-            requirement_analysis,
-            strategy,
-            scenario_analysis,
-        )
+        test_design_analysis = self._execute_stage("Test Design", lambda: self.generate_test_designs(requirement_analysis, strategy, scenario_analysis))
 
         # --------------------------------------------------------
         # 8. Test Case Generation
         # --------------------------------------------------------
 
-        test_case_analysis = self.generate_test_cases(
-            requirement_analysis,
-            strategy,
-            scenario_analysis,
-            test_design_analysis,
-        )
+        test_case_analysis = self._execute_stage("Test Case Generator", lambda: self.generate_test_cases(requirement_analysis, strategy, scenario_analysis, test_design_analysis))
 
         # --------------------------------------------------------
         # 9. Test Case Validation
         # --------------------------------------------------------
 
-        test_case_validation = self.validate_test_cases(
-            document_name=requirement_analysis.document_name,
-            requirement_analysis=requirement_analysis,
-            strategy=strategy,
-            scenario_analysis=scenario_analysis,
-            test_design_analysis=test_design_analysis,
-            test_case_analysis=test_case_analysis,
-        )
+        test_case_validation = self._execute_stage("Test Case Validator", lambda: self.validate_test_cases(document_name=requirement_analysis.document_name, requirement_analysis=requirement_analysis, strategy=strategy, scenario_analysis=scenario_analysis, test_design_analysis=test_design_analysis, test_case_analysis=test_case_analysis))
+        self._validation_event("Test Case Validator", test_case_validation)
 
         if not test_case_validation.passed:
+            self._emit("STAGE_FAILED", "Test Case Validator", "Test case validation failed.")
             raise RuntimeError(
                 "Test case validation failed."
             )
@@ -608,28 +617,17 @@ class CRSWorkflow:
         # 10. RTM Generation
         # --------------------------------------------------------
 
-        rtm_analysis = self.generate_rtm(
-            document_name=requirement_analysis.document_name,
-            requirement_analysis=requirement_analysis,
-            scenario_analysis=scenario_analysis,
-            test_design_analysis=test_design_analysis,
-            test_case_analysis=test_case_analysis,
-        )
+        rtm_analysis = self._execute_stage("RTM Generator", lambda: self.generate_rtm(document_name=requirement_analysis.document_name, requirement_analysis=requirement_analysis, scenario_analysis=scenario_analysis, test_design_analysis=test_design_analysis, test_case_analysis=test_case_analysis))
 
         # --------------------------------------------------------
         # 11. RTM Validation
         # --------------------------------------------------------
 
-        rtm_validation = self.validate_rtm(
-            document_name=requirement_analysis.document_name,
-            requirement_analysis=requirement_analysis,
-            scenario_analysis=scenario_analysis,
-            test_design_analysis=test_design_analysis,
-            test_case_analysis=test_case_analysis,
-            rtm_analysis=rtm_analysis,
-        )
+        rtm_validation = self._execute_stage("RTM Validator", lambda: self.validate_rtm(document_name=requirement_analysis.document_name, requirement_analysis=requirement_analysis, scenario_analysis=scenario_analysis, test_design_analysis=test_design_analysis, test_case_analysis=test_case_analysis, rtm_analysis=rtm_analysis))
+        self._validation_event("RTM Validator", rtm_validation)
 
         if not rtm_validation.passed:
+            self._emit("STAGE_FAILED", "RTM Validator", "RTM validation failed.")
             raise RuntimeError(
                 "RTM validation failed."
             )
@@ -642,17 +640,11 @@ class CRSWorkflow:
         # 12. Final QA Review
         # --------------------------------------------------------
 
-        final_qa = self.run_final_qa(
-            document_name=requirement_analysis.document_name,
-            requirement_analysis=requirement_analysis,
-            strategy=strategy,
-            scenario_analysis=scenario_analysis,
-            test_design_analysis=test_design_analysis,
-            test_case_analysis=test_case_analysis,
-            rtm_analysis=rtm_analysis,
-        )
+        final_qa = self._execute_stage("Final QA Reviewer", lambda: self.run_final_qa(document_name=requirement_analysis.document_name, requirement_analysis=requirement_analysis, strategy=strategy, scenario_analysis=scenario_analysis, test_design_analysis=test_design_analysis, test_case_analysis=test_case_analysis, rtm_analysis=rtm_analysis))
+        self._validation_event("Final QA Reviewer", final_qa)
 
         if not final_qa.passed:
+            self._emit("STAGE_FAILED", "Final QA Reviewer", "Final QA validation failed.")
             raise RuntimeError(
                 "Final QA validation failed."
             )
@@ -661,21 +653,13 @@ class CRSWorkflow:
         # 13. Excel Generation
         # --------------------------------------------------------
 
-        excel_path = self.generate_excel(
-            requirement_analysis=requirement_analysis,
-            strategy=strategy,
-            scenario_analysis=scenario_analysis,
-            test_design_analysis=test_design_analysis,
-            test_case_analysis=test_case_analysis,
-            rtm_analysis=rtm_analysis,
-            output_path=workflow_input.output_path,
-        )
+        excel_path = self._execute_stage("Excel Generator", lambda: self.generate_excel(requirement_analysis=requirement_analysis, strategy=strategy, scenario_analysis=scenario_analysis, test_design_analysis=test_design_analysis, test_case_analysis=test_case_analysis, rtm_analysis=rtm_analysis, output_path=workflow_input.output_path))
 
         # --------------------------------------------------------
         # Final Result
         # --------------------------------------------------------
 
-        return CRSWorkflowResult(
+        result = CRSWorkflowResult(
             ingestion_result=ingestion_result,
             requirement_analysis=requirement_analysis,
             test_strategy=strategy,
@@ -687,3 +671,5 @@ class CRSWorkflow:
             excel_path=str(excel_path),
             workflow_passed=True,
         )
+        self._emit("WORKFLOW_COMPLETED", None, "CRS SDET workflow completed.")
+        return result

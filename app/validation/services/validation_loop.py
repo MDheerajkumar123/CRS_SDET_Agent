@@ -18,6 +18,7 @@ class ValidationLoop:
         validator=None,
         rework_service=None,
         max_retries: int = 3,
+        event_publisher=None,
     ):
         if max_retries < 1:
             raise ValueError("max_retries must be at least 1.")
@@ -27,6 +28,11 @@ class ValidationLoop:
             rework_service or RequirementReworkService()
         )
         self.max_retries = max_retries
+        self.event_publisher = event_publisher
+
+    def _emit(self, event_type, **metadata):
+        if self.event_publisher:
+            self.event_publisher({"event_type": event_type, "stage": "Requirement Validator", "message": "Requirement validation requires rework." if event_type == "REWORK_STARTED" else "Requirement artifact reworked.", "metadata": metadata})
 
     def run(
         self,
@@ -64,9 +70,11 @@ class ValidationLoop:
                     passed=False,
                 )
 
+            self._emit("REWORK_STARTED", attempt=retry_count + 1, issues=review.issues, score=getattr(review, "score", None))
             current_analysis, _ = self.rework_service.rework(
                 analysis=current_analysis,
                 review=review,
             )
 
             retry_count += 1
+            self._emit("REWORK_COMPLETED", attempt=retry_count)
